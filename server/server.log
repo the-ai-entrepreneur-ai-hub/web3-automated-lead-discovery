@@ -1,0 +1,6 @@
+[dotenv@17.2.0] injecting env (3) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
+Server listening at http://localhost:3006
+Login attempt received
+Login error: Password mismatch
+Login attempt received
+Password reset token for newuser@example.com: 6ea3715aadb2cdc9e0ae8628688dea5d6693df9de698bf1675597235547389b2
