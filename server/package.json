@@ -4,30 +4,15 @@
   "description": "Server for the Web3 Prospector tool.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "worker": "node start-worker.js",
-    "ingest": "node run-scrapers.js",
-    "direct-ingest": "node direct-ingest.js",
-    "validate": "node validate-keys.js",
-    "validate-all": "node validate-all-keys.js"
+    "start": "node src/index.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@prisma/client": "^6.11.1",
     "airtable": "^0.12.2",
-    "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
-    "bullmq": "^5.56.1",
-    "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "node-cron": "^3.0.2",
-    "prisma": "^6.11.1",
-    "puppeteer": "^24.12.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "jsonwebtoken": "^9.0.2"
   },
   "keywords": [],
   "author": "",

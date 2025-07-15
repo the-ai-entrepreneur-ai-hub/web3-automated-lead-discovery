@@ -3,9 +3,8 @@ const Airtable = require('airtable');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const crypto = require('crypto');
 require('dotenv').config();
-const { addLeadToQueue } = require('./services/queue');
-const { scheduleIngestion, triggerManualIngestion, getScheduleStatus } = require('./services/scheduler');
 
 const app = express();
 const port = 3006;
@@ -13,7 +12,11 @@ const port = 3006;
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_TOKEN }).base('app32Pwdg1yJPDRA7');
 const userTable = base('Users');
 
-app.use(cors());
+// Configure CORS to allow credentials
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -22,9 +25,35 @@ app.get('/', (req, res) => {
 
 app.post('/register', async (req, res) => {
   const { email, password, firstName, lastName, company } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  // Validate required fields
+  if (!email || !password || !firstName || !lastName || !company) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Validate password length
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
 
   try {
+    // Check if user already exists
+    const existingUser = await userTable.select({
+      filterByFormula: `{email} = "${email}"`
+    }).firstPage();
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const records = await userTable.create([
       {
         fields: {
@@ -37,10 +66,24 @@ app.post('/register', async (req, res) => {
         }
       }
     ]);
-    res.json({ user: records[0].fields });
+    
+    // Generate JWT token
+    const token = jwt.sign({ id: records[0].id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+    
+    res.json({ 
+      token, 
+      user: {
+        id: records[0].id,
+        email: records[0].fields.email,
+        firstName: records[0].fields.firstName,
+        lastName: records[0].fields.lastName,
+        company: records[0].fields.company,
+        tier: records[0].fields.tier
+      }
+    });
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: 'User already exists' });
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
@@ -66,12 +109,156 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+    res.json({ 
+      token,
+      user: {
+        id: user.id,
+        email: user.fields.email,
+        firstName: user.fields.firstName,
+        lastName: user.fields.lastName,
+        company: user.fields.company,
+        tier: user.fields.tier
+      }
+    });
 
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
+// Forgot password endpoint
+app.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    // Check if user exists
+    const existingUser = await userTable.select({
+      filterByFormula: `{email} = "${email}"`
+    }).firstPage();
+
+    if (existingUser.length === 0) {
+      // Don't reveal if email exists or not for security
+      return res.json({ message: 'If the email exists, a reset link has been sent.' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Try to update user with reset token (fields may not exist in Airtable)
+    try {
+      await userTable.update([
+        {
+          id: existingUser[0].id,
+          fields: {
+            resetToken: resetToken,
+            resetTokenExpiry: resetTokenExpiry.toISOString()
+          }
+        }
+      ]);
+    } catch (updateError) {
+      // If fields don't exist in Airtable, we'll use in-memory storage for demo
+      console.log('Note: resetToken fields not found in Airtable schema. Using in-memory storage for demo.');
+      // Store in memory for demo (in production, use proper database)
+      global.resetTokens = global.resetTokens || {};
+      global.resetTokens[email] = { token: resetToken, expiry: resetTokenExpiry };
+    }
+
+    // In a real app, you would send an email here
+    // For now, we'll just log the token (in production, never do this!)
+    console.log(`Password reset token for ${email}: ${resetToken}`);
+    
+    res.json({ message: 'If the email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset password endpoint
+app.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    let user = null;
+    let userEmail = null;
+
+    // First try to find user by token in Airtable
+    try {
+      const users = await userTable.select({
+        filterByFormula: `{resetToken} = "${token}"`
+      }).firstPage();
+
+      if (users.length > 0) {
+        user = users[0];
+        userEmail = user.fields.email;
+        const tokenExpiry = new Date(user.fields.resetTokenExpiry);
+        
+        if (tokenExpiry < new Date()) {
+          return res.status(400).json({ error: 'Reset token has expired' });
+        }
+      }
+    } catch (airtableError) {
+      // Fallback to in-memory storage
+      global.resetTokens = global.resetTokens || {};
+      for (const [email, tokenData] of Object.entries(global.resetTokens)) {
+        if (tokenData.token === token) {
+          if (tokenData.expiry < new Date()) {
+            return res.status(400).json({ error: 'Reset token has expired' });
+          }
+          userEmail = email;
+          // Find user by email
+          const users = await userTable.select({
+            filterByFormula: `{email} = "${email}"`
+          }).firstPage();
+          if (users.length > 0) {
+            user = users[0];
+          }
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await userTable.update([
+      {
+        id: user.id,
+        fields: {
+          password: hashedPassword
+        }
+      }
+    ]);
+
+    // Clear reset token from memory if it exists there
+    if (global.resetTokens && global.resetTokens[userEmail]) {
+      delete global.resetTokens[userEmail];
+    }
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -83,9 +270,16 @@ app.get('/profile', async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'your_jwt_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
     const records = await userTable.find(decoded.id);
-    res.json(records.fields);
+    res.json({
+      id: records.id,
+      email: records.fields.email,
+      firstName: records.fields.firstName,
+      lastName: records.fields.lastName,
+      company: records.fields.company,
+      tier: records.fields.tier
+    });
   } catch (err) {
     res.status(401).json({ error: 'Unauthorized' });
   }
@@ -128,50 +322,11 @@ app.get('/seed', async (req, res) => {
     res.json({ user: records[0].fields });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: 'User already exists' });
+    res.status(400).json({ error: 'Email already registered' });
   }
 });
 
-app.post('/api/v1/leads/start-ingestion', async (req, res) => {
-  try {
-    // This job will be picked up by the worker to start the scraping process
-    await addLeadToQueue('start-ingestion', { 
-      type: 'manual-api',
-      timestamp: new Date().toISOString()
-    });
-    res.status(202).json({ message: 'Lead ingestion process started.' });
-  } catch (error) {
-    console.error('Error starting lead ingestion:', error);
-    res.status(500).json({ error: 'Failed to start lead ingestion.' });
-  }
-});
-
-// New endpoint for manual ingestion trigger
-app.post('/api/v1/leads/trigger-manual', async (req, res) => {
-  try {
-    await triggerManualIngestion();
-    res.status(202).json({ message: 'Manual lead ingestion triggered.' });
-  } catch (error) {
-    console.error('Error triggering manual ingestion:', error);
-    res.status(500).json({ error: 'Failed to trigger manual ingestion.' });
-  }
-});
-
-// New endpoint for scheduler status
-app.get('/api/v1/scheduler/status', (req, res) => {
-  try {
-    const status = getScheduleStatus();
-    res.json(status);
-  } catch (error) {
-    console.error('Error getting scheduler status:', error);
-    res.status(500).json({ error: 'Failed to get scheduler status.' });
-  }
-});
-
-// Initialize scheduler
-scheduleIngestion();
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
-  console.log('🤖 Automated scheduling is active');
 });
