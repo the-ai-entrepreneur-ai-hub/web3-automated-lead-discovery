@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
+const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 require('dotenv').config();
 
 const app = express();
@@ -167,6 +168,12 @@ app.post('/forgot-password', async (req, res) => {
     return res.status(400).json({ error: 'Email is required' });
   }
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   try {
     // Check if user exists
     const existingUser = await userTable.select({
@@ -201,11 +208,30 @@ app.post('/forgot-password', async (req, res) => {
       global.resetTokens[email] = { token: resetToken, expiry: resetTokenExpiry };
     }
 
-    // In a real app, you would send an email here
-    // For now, we'll just log the token (in production, never do this!)
-    console.log(`Password reset token for ${email}: ${resetToken}`);
+    // Send password reset email
+    try {
+      const emailResult = await sendPasswordResetEmail(email, resetToken);
+      console.log(`Password reset email sent to ${email}`);
+      
+      // For development, log the preview URL
+      if (emailResult.previewUrl) {
+        console.log('Email preview URL:', emailResult.previewUrl);
+      }
+      
+      res.json({ 
+        message: 'If the email exists, a reset link has been sent.',
+        success: true
+      });
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError);
+      
+      // Still respond with success message for security (don't reveal email sending errors)
+      res.json({ 
+        message: 'If the email exists, a reset link has been sent.',
+        success: true
+      });
+    }
     
-    res.json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'Server error' });
