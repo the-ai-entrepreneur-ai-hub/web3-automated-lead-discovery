@@ -520,6 +520,68 @@ app.get('/projects', authenticateToken, (req, res) => {
   });
 });
 
+// Export endpoint for premium users
+app.get('/export-premium', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is premium
+    const userRecord = await userTable.find(req.user.id);
+    if (userRecord.fields.tier !== 'paid') {
+      return res.status(403).json({ error: 'Premium access required' });
+    }
+
+    console.log('Fetching ALL projects for premium export...');
+    const projects = [];
+    
+    await new Promise((resolve, reject) => {
+      base('Leads').select({
+        view: "Grid view"
+      }).eachPage(function page(records, fetchNextPage) {
+        records.forEach(function(record) {
+          projects.push(record.fields);
+        });
+        fetchNextPage();
+      }, function done(err) {
+        if (err) {
+          console.error('Airtable error:', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log(`Total projects fetched: ${projects.length}`);
+    
+    // Filter projects that have at least one social media link
+    const projectsWithSocials = projects.filter(p => 
+      (p.Twitter && p.Twitter.trim() !== '') || 
+      (p.LinkedIn && p.LinkedIn.trim() !== '') || 
+      (p.Telegram && p.Telegram.trim() !== '')
+    );
+
+    console.log(`Projects with social media: ${projectsWithSocials.length}`);
+
+    // Prepare CSV data
+    const csvData = projectsWithSocials.map(p => ({
+      "Project Name": p["Project Name"] || '',
+      "Website": p.Website || '',
+      "Twitter": p.Twitter || '',
+      "LinkedIn": p.LinkedIn || '',
+      "Telegram": p.Telegram || ''
+    }));
+
+    res.json({
+      total: projects.length,
+      withSocials: projectsWithSocials.length,
+      data: csvData
+    });
+
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
 // Logout endpoint (mainly for server-side token invalidation if needed)
 app.post('/logout', authenticateToken, (req, res) => {
   // In a stateless JWT setup, logout is typically handled client-side
