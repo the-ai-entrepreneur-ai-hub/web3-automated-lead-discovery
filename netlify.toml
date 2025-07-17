@@ -1,6 +1,6 @@
 [build]
   # Build command
-  command = "cd client && npm ci && npm run build"
+  command = "cd client && npm install && npm run build"
   
   # Directory to publish (relative to root of your repo)
   publish = "client/dist"
@@ -48,61 +48,61 @@
 # Specific API endpoints
 [[redirects]]
   from = "/register"
-  to = "https://your-backend-url.com/register"
+  to = "https://web3-prospector-backend.herokuapp.com/register"
   status = 200
   force = true
 
 [[redirects]]
   from = "/login"
-  to = "https://your-backend-url.com/login"
+  to = "https://web3-prospector-backend.herokuapp.com/login"
   status = 200
   force = true
 
 [[redirects]]
   from = "/verify-email"
-  to = "https://your-backend-url.com/verify-email"
+  to = "https://web3-prospector-backend.herokuapp.com/verify-email"
   status = 200
   force = true
 
 [[redirects]]
   from = "/projects"
-  to = "https://your-backend-url.com/projects"
+  to = "https://web3-prospector-backend.herokuapp.com/projects"
   status = 200
   force = true
 
 [[redirects]]
   from = "/profile"
-  to = "https://your-backend-url.com/profile"
+  to = "https://web3-prospector-backend.herokuapp.com/profile"
   status = 200
   force = true
 
 [[redirects]]
   from = "/create-checkout-session"
-  to = "https://your-backend-url.com/create-checkout-session"
+  to = "https://web3-prospector-backend.herokuapp.com/create-checkout-session"
   status = 200
   force = true
 
 [[redirects]]
   from = "/subscription-status"
-  to = "https://your-backend-url.com/subscription-status"
+  to = "https://web3-prospector-backend.herokuapp.com/subscription-status"
   status = 200
   force = true
 
 [[redirects]]
   from = "/cancel-subscription"
-  to = "https://your-backend-url.com/cancel-subscription"
+  to = "https://web3-prospector-backend.herokuapp.com/cancel-subscription"
   status = 200
   force = true
 
 [[redirects]]
   from = "/stripe-webhook"
-  to = "https://your-backend-url.com/stripe-webhook"
+  to = "https://web3-prospector-backend.herokuapp.com/stripe-webhook"
   status = 200
   force = true
 
 [[redirects]]
   from = "/export-premium"
-  to = "https://your-backend-url.com/export-premium"
+  to = "https://web3-prospector-backend.herokuapp.com/export-premium"
   status = 200
   force = true
 
