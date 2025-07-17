@@ -221,6 +221,15 @@ app.post('/register', async (req, res) => {
       });
     } catch (airtableError) {
       console.error('Error storing verification data in Airtable:', airtableError);
+      
+      if (airtableError.message.includes('Unknown field names')) {
+        console.log('⚠️  Airtable verification fields missing. Add these fields to your Users table:');
+        console.log('   - verificationCode (Single line text)');
+        console.log('   - verificationCodeExpiry (Date/time)');
+        console.log('   - isVerified (Checkbox)');
+        console.log('   - pendingRegistration (Long text)');
+      }
+      
       // If Airtable fails, fall back to in-memory storage
       global.pendingRegistrations = global.pendingRegistrations || {};
       global.pendingRegistrations[email] = {
@@ -997,20 +1006,35 @@ const cleanupExpiredVerificationCodes = async () => {
     
     // Get all pending registrations with expired codes
     const now = new Date().toISOString();
-    const expiredRecords = await userTable.select({
-      filterByFormula: `AND({verificationCode} != "", {isVerified} = FALSE(), {verificationCodeExpiry} < "${now}")`
-    }).firstPage();
+    
+    // Try to find expired records, but handle case where fields might not exist
+    try {
+      const expiredRecords = await userTable.select({
+        filterByFormula: `AND({verificationCode} != "", {isVerified} = FALSE(), {verificationCodeExpiry} < "${now}")`
+      }).firstPage();
 
-    if (expiredRecords.length > 0) {
-      console.log(`Found ${expiredRecords.length} expired verification codes to clean up`);
-      
-      // Delete expired records
-      const recordIds = expiredRecords.map(record => record.id);
-      await userTable.destroy(recordIds);
-      
-      console.log(`Cleaned up ${recordIds.length} expired verification codes`);
-    } else {
-      console.log('No expired verification codes found');
+      if (expiredRecords.length > 0) {
+        console.log(`Found ${expiredRecords.length} expired verification codes to clean up`);
+        
+        // Delete expired records
+        const recordIds = expiredRecords.map(record => record.id);
+        await userTable.destroy(recordIds);
+        
+        console.log(`Cleaned up ${recordIds.length} expired verification codes`);
+      } else {
+        console.log('No expired verification codes found');
+      }
+    } catch (airtableError) {
+      if (airtableError.message.includes('Unknown field names')) {
+        console.log('⚠️  Airtable verification fields not found. Please add these fields to your Users table:');
+        console.log('   - verificationCode (Single line text)');
+        console.log('   - verificationCodeExpiry (Date/time)');
+        console.log('   - isVerified (Checkbox)');
+        console.log('   - pendingRegistration (Long text)');
+        console.log('   Skipping cleanup for now...');
+      } else {
+        throw airtableError;
+      }
     }
   } catch (error) {
     console.error('Error cleaning up expired verification codes:', error);
