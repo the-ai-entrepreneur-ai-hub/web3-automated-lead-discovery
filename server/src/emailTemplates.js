@@ -99,7 +99,13 @@ const passwordResetTemplate = (resetToken, userEmail) => {
           }
           .content {
             margin-bottom: 30px;
-            color: #d0d0d0;
+            color: #f0f0f0;
+          }
+          .content p {
+            color: #f0f0f0;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
           }
           .reset-button {
             display: inline-block;
@@ -120,20 +126,25 @@ const passwordResetTemplate = (resetToken, userEmail) => {
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
           }
           .security-notice {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            color: #FFD700;
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            color: #FFF8DC;
             padding: 18px;
             border-radius: 8px;
             margin: 20px 0;
+            font-weight: 500;
           }
           .footer {
             text-align: center;
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px solid rgba(0, 255, 255, 0.2);
-            color: #888;
+            color: #bbb;
             font-size: 14px;
+          }
+          .footer p {
+            color: #bbb;
+            margin: 8px 0;
           }
           .footer a {
             color: #00FFFF;
@@ -143,17 +154,26 @@ const passwordResetTemplate = (resetToken, userEmail) => {
             text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
           }
           .expiry-info {
-            color: #aaa;
+            color: #ccc;
             font-size: 14px;
             margin-top: 15px;
           }
           .expiry-info strong {
             color: #00FFFF;
           }
+          .expiry-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+          }
+          .expiry-info li {
+            color: #ccc;
+            margin: 5px 0;
+          }
           .tagline {
-            color: #888;
+            color: #aaa;
             font-size: 12px;
             margin-top: 5px;
+            font-weight: 300;
           }
         </style>
       </head>
