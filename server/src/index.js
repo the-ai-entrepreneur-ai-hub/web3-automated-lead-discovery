@@ -38,13 +38,91 @@ const setCachedProjects = (data) => {
 
 // Performance optimizations
 app.use(compression()); // Compress responses
-app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
 
 // Configure CORS to allow credentials
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io'],
   credentials: true
 }));
+
+// Stripe webhook endpoint needs raw body, so place it before JSON middleware
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      console.log('Payment succeeded:', session.id);
+      
+      // Update user tier to paid
+      try {
+        await userTable.update([
+          {
+            id: session.metadata.userId,
+            fields: {
+              tier: 'paid',
+              stripeCustomerId: session.customer,
+              stripeSubscriptionId: session.subscription,
+            }
+          }
+        ]);
+        console.log(`User ${session.metadata.userEmail} upgraded to paid tier`);
+      } catch (error) {
+        console.error('Error updating user tier:', error);
+      }
+      break;
+    
+    case 'customer.subscription.deleted':
+      const subscription = event.data.object;
+      console.log('Subscription cancelled:', subscription.id);
+      
+      // Update user tier to free
+      try {
+        const users = await userTable.select({
+          filterByFormula: `{stripeSubscriptionId} = "${subscription.id}"`
+        }).firstPage();
+        
+        if (users.length > 0) {
+          await userTable.update([
+            {
+              id: users[0].id,
+              fields: {
+                tier: 'free',
+                stripeSubscriptionId: '',
+              }
+            }
+          ]);
+          console.log(`User subscription cancelled: ${users[0].fields.email}`);
+        }
+      } catch (error) {
+        console.error('Error updating user tier on cancellation:', error);
+      }
+      break;
+    
+    case 'invoice.payment_failed':
+      const invoice = event.data.object;
+      console.log('Payment failed:', invoice.id);
+      // Handle failed payment (send email, etc.)
+      break;
+    
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+// JSON middleware for all other routes
+app.use(express.json({ limit: '10mb' }));
 
 // Auth middleware
 const authenticateToken = (req, res, next) => {
@@ -697,81 +775,6 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   }
 });
 
-// Stripe webhook endpoint
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object;
-      console.log('Payment succeeded:', session.id);
-      
-      // Update user tier to paid
-      try {
-        await userTable.update([
-          {
-            id: session.metadata.userId,
-            fields: {
-              tier: 'paid',
-              stripeCustomerId: session.customer,
-              stripeSubscriptionId: session.subscription,
-            }
-          }
-        ]);
-        console.log(`User ${session.metadata.userEmail} upgraded to paid tier`);
-      } catch (error) {
-        console.error('Error updating user tier:', error);
-      }
-      break;
-    
-    case 'customer.subscription.deleted':
-      const subscription = event.data.object;
-      console.log('Subscription cancelled:', subscription.id);
-      
-      // Update user tier to free
-      try {
-        const users = await userTable.select({
-          filterByFormula: `{stripeSubscriptionId} = "${subscription.id}"`
-        }).firstPage();
-        
-        if (users.length > 0) {
-          await userTable.update([
-            {
-              id: users[0].id,
-              fields: {
-                tier: 'free',
-                stripeSubscriptionId: '',
-              }
-            }
-          ]);
-          console.log(`User subscription cancelled: ${users[0].fields.email}`);
-        }
-      } catch (error) {
-        console.error('Error updating user tier on cancellation:', error);
-      }
-      break;
-    
-    case 'invoice.payment_failed':
-      const invoice = event.data.object;
-      console.log('Payment failed:', invoice.id);
-      // Handle failed payment (send email, etc.)
-      break;
-    
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-
-  res.json({ received: true });
-});
 
 // Get user's subscription status
 app.get('/subscription-status', authenticateToken, async (req, res) => {
