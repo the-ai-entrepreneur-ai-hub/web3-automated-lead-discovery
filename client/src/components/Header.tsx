@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { UserCircle, LogOut, Menu, X, ChevronDown } from "lucide-react";
+import { UserCircle, LogOut, Menu, X, ChevronDown, Settings } from "lucide-react";
 import { User } from "@/lib/types";
 
 const Header = () => {
@@ -258,6 +258,16 @@ const Header = () => {
                       </div>
                       <div className="py-1">
                         <button
+                          onClick={() => {
+                            navigate('/settings');
+                            setIsProfileOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:bg-accent/50 transition-colors"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Settings
+                        </button>
+                        <button
                           onClick={handleLogout}
                           className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:bg-accent/50 transition-colors"
                         >
@@ -375,6 +385,17 @@ const Header = () => {
                         Dashboard
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        navigate('/settings');
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Button>
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-muted-foreground hover:text-primary"

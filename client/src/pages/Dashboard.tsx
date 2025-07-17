@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "@/lib/types";
+import { stripeApi } from "@/lib/stripe";
 
 interface LeadAnalysis {
   state: string;
@@ -208,6 +209,22 @@ const Dashboard = () => {
     setVisibleProjects(prevVisibleProjects => prevVisibleProjects + 6);
   };
 
+  const handleUpgrade = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const { url } = await stripeApi.createCheckoutSession(token);
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error upgrading:', error);
+      alert('Failed to start upgrade process. Please try again.');
+    }
+  };
+
   const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
   // Memoize expensive filtering and sorting operations
@@ -293,7 +310,7 @@ const Dashboard = () => {
               {user?.tier !== 'paid' && (
                 <Button 
                   className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                  onClick={() => navigate('/register')}
+                  onClick={handleUpgrade}
                 >
                   Upgrade to Pro
                 </Button>
@@ -444,7 +461,7 @@ const Dashboard = () => {
                         <Button 
                           size="sm" 
                           className="text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                          onClick={() => navigate('/register')}
+                          onClick={handleUpgrade}
                         >
                           Upgrade to Pro
                         </Button>
@@ -548,7 +565,7 @@ const Dashboard = () => {
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 px-8"
-                  onClick={() => navigate('/register')}
+                  onClick={handleUpgrade}
                 >
                   Upgrade to Pro - $99/month
                 </Button>

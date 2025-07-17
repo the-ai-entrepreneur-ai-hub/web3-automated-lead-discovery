@@ -39,7 +39,11 @@
       "Bash(cmd.exe /c \"git commit -m \"\"Update premium export and email verification\"\"\")",
       "Bash(powershell.exe:*)",
       "Bash(cmd.exe /c \"git add .\")",
-      "Bash(cmd.exe /c \"git add .claude/settings.local.json\")"
+      "Bash(cmd.exe /c \"git add .claude/settings.local.json\")",
+      "Bash(cmd.exe /c \"git add server/server.log\")",
+      "Bash(cmd.exe /c \"git commit -m \"\"Update Claude settings and server logs - Added new tool permissions to Claude settings - Updated server log with fresh startup info 🤖 Generated with [Claude Code](https://claude.ai/code) Co-Authored-By: Claude <noreply@anthropic.com>\"\"\")",
+      "Bash(cmd.exe /c \"git commit -m \"\"Update Claude settings and server logs\"\"\")",
+      "Bash(true)"
     ],
     "deny": []
   }
