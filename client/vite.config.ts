@@ -4,7 +4,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
-  base: "/web3-automated-lead-discovery/",
+  base: "/web3-prospector/",
   server: {
     host: "localhost",
     port: 5173,
