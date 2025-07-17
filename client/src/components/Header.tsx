@@ -222,7 +222,10 @@ const Header = () => {
                 <div className="relative" ref={profileDropdownRef}>
                   <button
                     className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent/50 transition-colors"
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    onClick={() => {
+                      console.log('User object:', user);
+                      setIsProfileOpen(!isProfileOpen);
+                    }}
                   >
                     <UserCircle className="h-8 w-8 text-muted-foreground" />
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
