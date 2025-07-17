@@ -1,6 +1,12 @@
-[dotenv@17.2.0] injecting env (3) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
+[dotenv@17.2.0] injecting env (5) from .env (tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`)
 Server listening at http://localhost:3006
-Login attempt received
-Login error: Password mismatch
-Login attempt received
-Password reset token for newuser@example.com: 6ea3715aadb2cdc9e0ae8628688dea5d6693df9de698bf1675597235547389b2
+Test email account created:
+User: vcizggtxdufa55nc@ethereal.email
+Pass: dzaEuP9r7NacaS948n
+Password reset email sent successfully
+Message ID: <37c754b5-07e9-ea9e-366c-2be2c693569d@web3radar.com>
+Preview URL: https://ethereal.email/message/aHivjhYN.NqSY-LfaHivkJqci.OUK5aoAAAAAZtLTqmN625DeFVnvzLYp28
+Password reset email sent to testuser123@example.com
+Email preview URL: https://ethereal.email/message/aHivjhYN.NqSY-LfaHivkJqci.OUK5aoAAAAAZtLTqmN625DeFVnvzLYp28
+Successfully fetched 186 projects from Airtable
+Returning cached projects

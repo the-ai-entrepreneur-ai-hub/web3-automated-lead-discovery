@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "@/lib/types";
 
@@ -36,72 +36,99 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [user, setUser] = useState<User | null>(null);
   const [visibleProjects, setVisibleProjects] = useState(6);
+  const [isLoading, setIsLoading] = useState(true);
+  const [projectsLoading, setProjectsLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
+  // Memoize API calls to prevent unnecessary re-renders
+  const fetchData = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/projects`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setProjects(data);
-        } else if (response.status === 401 || response.status === 403) {
-          // Token is invalid
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/login");
-        } else {
-          console.error('Failed to fetch projects');
-        }
-      } catch (error) {
-        console.error('Error fetching projects:', error);
+    setIsLoading(true);
+    setProjectsLoading(true);
+
+    try {
+      // Fetch user and projects in parallel for better performance
+      const [userResponse, projectsResponse] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${import.meta.env.VITE_API_URL}/projects`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      // Handle user response
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+      } else if (userResponse.status === 401 || userResponse.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+        return;
       }
-    };
 
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        } else if (response.status === 401 || response.status === 403) {
-          // Token is invalid
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/login");
-        } else {
-          console.error('Failed to fetch user');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
+      // Handle projects response
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json();
+        setProjects(projectsData);
+        // Cache projects data for 5 minutes
+        localStorage.setItem("projects", JSON.stringify({
+          data: projectsData,
+          timestamp: Date.now()
+        }));
+      } else if (projectsResponse.status === 401 || projectsResponse.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+        return;
       }
-    };
 
-    fetchProjects();
-    fetchUser();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+      setProjectsLoading(false);
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    // Check for cached projects data first
+    const cachedProjects = localStorage.getItem("projects");
+    if (cachedProjects) {
+      try {
+        const { data, timestamp } = JSON.parse(cachedProjects);
+        const cacheAge = Date.now() - timestamp;
+        // Use cached data if it's less than 5 minutes old
+        if (cacheAge < 5 * 60 * 1000) {
+          setProjects(data);
+          setProjectsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error parsing cached projects:', error);
+      }
+    }
+
+    // Check for cached user data
+    const cachedUser = localStorage.getItem("user");
+    if (cachedUser) {
+      try {
+        const userData = JSON.parse(cachedUser);
+        setUser(userData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error parsing cached user:', error);
+      }
+    }
+
+    fetchData();
+  }, [fetchData]);
 
 
   const handleExport = () => {
@@ -147,41 +174,44 @@ const Dashboard = () => {
 
   const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = (project["Project Name"] && project["Project Name"].toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (project["Lead Summary"] && project["Lead Summary"].value && project["Lead Summary"].value.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    let matchesCategory = true;
-    if (selectedCategory !== "All") {
-      const dateAdded = new Date(project["Date Added"]);
-      const daysSinceAdded = Math.floor((Date.now() - dateAdded.getTime()) / (1000 * 60 * 60 * 24));
+  // Memoize expensive filtering operations
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = (project["Project Name"] && project["Project Name"].toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (project["Lead Summary"] && project["Lead Summary"].value && project["Lead Summary"].value.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      switch (selectedCategory) {
-        case "Recently Added":
-          matchesCategory = daysSinceAdded <= 7;
-          break;
-        case "High Funding":
-          matchesCategory = project.Source === "CoinMarketCap" || project.Source === "CryptoRank";
-          break;
-        case "Early Stage":
-          matchesCategory = project.Source === "ICO Drops" || daysSinceAdded <= 30;
-          break;
-        case "Mainnet Live":
-          matchesCategory = project.Source === "CoinMarketCap" || project.Source === "DeFiLlama";
-          break;
-        case "Token Launch":
-          matchesCategory = project.Source === "ICO Drops" || project.Source === "CoinMarketCap";
-          break;
-        case "Hiring":
-          matchesCategory = project.Source === "CryptoRank" || project.LinkedIn;
-          break;
-        default:
-          matchesCategory = true;
+      let matchesCategory = true;
+      if (selectedCategory !== "All") {
+        const dateAdded = new Date(project["Date Added"]);
+        const daysSinceAdded = Math.floor((Date.now() - dateAdded.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (selectedCategory) {
+          case "Recently Added":
+            matchesCategory = daysSinceAdded <= 7;
+            break;
+          case "High Funding":
+            matchesCategory = project.Source === "CoinMarketCap" || project.Source === "CryptoRank";
+            break;
+          case "Early Stage":
+            matchesCategory = project.Source === "ICO Drops" || daysSinceAdded <= 30;
+            break;
+          case "Mainnet Live":
+            matchesCategory = project.Source === "CoinMarketCap" || project.Source === "DeFiLlama";
+            break;
+          case "Token Launch":
+            matchesCategory = project.Source === "ICO Drops" || project.Source === "CoinMarketCap";
+            break;
+          case "Hiring":
+            matchesCategory = project.Source === "CryptoRank" || project.LinkedIn;
+            break;
+          default:
+            matchesCategory = true;
+        }
       }
-    }
-    
-    return matchesSearch && matchesCategory;
-  });
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [projects, searchTerm, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -277,7 +307,39 @@ const Dashboard = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredProjects.slice(0, user?.tier === 'paid' ? visibleProjects : Math.min(visibleProjects, 100)).map((project) => (
+          {projectsLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="card-web3 animate-pulse">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="h-6 bg-secondary rounded mb-2"></div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-20 bg-secondary rounded"></div>
+                        <div className="h-4 w-24 bg-secondary rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-secondary rounded-lg">
+                    <div className="h-4 bg-secondary rounded mb-2"></div>
+                    <div className="h-4 bg-secondary rounded"></div>
+                  </div>
+                  <div className="p-3 bg-secondary rounded-lg">
+                    <div className="h-4 bg-secondary rounded mb-2"></div>
+                    <div className="h-4 bg-secondary rounded"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : filteredProjects.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No projects found matching your criteria.</p>
+            </div>
+          ) : (
+            filteredProjects.slice(0, user?.tier === 'paid' ? visibleProjects : Math.min(visibleProjects, 100)).map((project) => (
             <Card key={project["Lead ID"]} className="card-web3 hover:glow-effect group transition-all duration-300">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -406,7 +468,8 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))
+          )}
         </div>
 
         {/* Load More */}

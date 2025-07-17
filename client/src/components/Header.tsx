@@ -28,12 +28,18 @@ const Header = () => {
           if (response.ok) {
             const data = await response.json();
             setUser(data);
+            // Update localStorage with fresh data from server
+            localStorage.setItem("user", JSON.stringify(data));
           } else {
             // Token is invalid, clean up
             localStorage.removeItem("token");
             localStorage.removeItem("user");
             setUser(null);
           }
+        } else {
+          // No token, ensure user is cleared
+          localStorage.removeItem("user");
+          setUser(null);
         }
       } catch (error) {
         console.error('Error fetching user:', error);
