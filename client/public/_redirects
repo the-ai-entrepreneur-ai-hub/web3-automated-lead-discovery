@@ -1,0 +1,21 @@
+# SPA fallback for client-side routing
+/*    /index.html   200
+
+# API redirects to your backend server (replace with your actual backend URL)
+/api/*  https://your-backend-url.com/api/:splat  200
+/register  https://your-backend-url.com/register  200
+/login  https://your-backend-url.com/login  200
+/verify-email  https://your-backend-url.com/verify-email  200
+/resend-verification  https://your-backend-url.com/resend-verification  200
+/forgot-password  https://your-backend-url.com/forgot-password  200
+/reset-password  https://your-backend-url.com/reset-password  200
+/projects  https://your-backend-url.com/projects  200
+/profile  https://your-backend-url.com/profile  200
+/create-checkout-session  https://your-backend-url.com/create-checkout-session  200
+/subscription-status  https://your-backend-url.com/subscription-status  200
+/cancel-subscription  https://your-backend-url.com/cancel-subscription  200
+/stripe-webhook  https://your-backend-url.com/stripe-webhook  200
+/export-premium  https://your-backend-url.com/export-premium  200
+/logout  https://your-backend-url.com/logout  200
+/debug-users  https://your-backend-url.com/debug-users  200
+/seed  https://your-backend-url.com/seed  200
