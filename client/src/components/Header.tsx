@@ -28,10 +28,19 @@ const Header = () => {
           if (response.ok) {
             const data = await response.json();
             setUser(data);
+          } else {
+            // Token is invalid, clean up
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            setUser(null);
           }
         }
       } catch (error) {
         console.error('Error fetching user:', error);
+        // Network error or other issues, clean up stored tokens
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
       }
     };
 
@@ -52,11 +61,25 @@ const Header = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(null);
+      navigate("/");
+    }
   };
 
   const isLoggedIn = !!user;
