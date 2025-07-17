@@ -6,6 +6,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const compression = require('compression');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
+const { sendEmailVerification } = require('./emailVerificationService');
 require('dotenv').config();
 
 const app = express();
@@ -66,6 +67,7 @@ app.get('/', (req, res) => {
   res.send('Hello from the Web3 Prospector server!');
 });
 
+// Registration endpoint - Step 1: Send verification code
 app.post('/register', async (req, res) => {
   const { email, password, firstName, lastName, company } = req.body;
   
@@ -95,23 +97,94 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Send verification email
+    const verificationResult = await sendEmailVerification(email);
+    
+    // Store registration data temporarily in memory with verification code
+    global.pendingRegistrations = global.pendingRegistrations || {};
+    global.pendingRegistrations[email] = {
+      email,
+      password,
+      firstName,
+      lastName,
+      company,
+      verificationCode: verificationResult.verificationCode,
+      expiryTime: verificationResult.expiryTime,
+      timestamp: new Date()
+    };
+
+    console.log(`Verification code sent to ${email}`);
+    
+    // For development, log the preview URL
+    if (verificationResult.previewUrl) {
+      console.log('Email preview URL:', verificationResult.previewUrl);
+    }
+
+    res.json({ 
+      message: 'Verification code sent to your email. Please check your inbox.',
+      success: true,
+      requiresVerification: true
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Server error during registration' });
+  }
+});
+
+// Registration endpoint - Step 2: Verify email and complete registration
+app.post('/verify-email', async (req, res) => {
+  const { email, verificationCode } = req.body;
+  
+  // Validate required fields
+  if (!email || !verificationCode) {
+    return res.status(400).json({ error: 'Email and verification code are required' });
+  }
+
+  try {
+    // Check if pending registration exists
+    global.pendingRegistrations = global.pendingRegistrations || {};
+    const pendingReg = global.pendingRegistrations[email];
+
+    if (!pendingReg) {
+      return res.status(400).json({ error: 'No pending registration found for this email' });
+    }
+
+    // Check if verification code matches
+    if (pendingReg.verificationCode !== verificationCode) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    // Check if code has expired
+    if (new Date() > pendingReg.expiryTime) {
+      // Clean up expired registration
+      delete global.pendingRegistrations[email];
+      return res.status(400).json({ error: 'Verification code has expired. Please register again.' });
+    }
+
+    // Create the user account
+    const hashedPassword = await bcrypt.hash(pendingReg.password, 10);
 
     const records = await userTable.create([
       {
         fields: {
-          email: email,
+          email: pendingReg.email,
           password: hashedPassword,
           tier: 'free',
-          firstName: firstName,
-          lastName: lastName,
-          company: company
+          firstName: pendingReg.firstName,
+          lastName: pendingReg.lastName,
+          company: pendingReg.company,
+          isVerified: true
         }
       }
     ]);
-    
+
+    // Clean up pending registration
+    delete global.pendingRegistrations[email];
+
     // Generate JWT token
     const token = jwt.sign({ id: records[0].id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+    
+    console.log(`Email verified and account created for ${email}`);
     
     res.json({ 
       token, 
@@ -121,12 +194,59 @@ app.post('/register', async (req, res) => {
         firstName: records[0].fields.firstName,
         lastName: records[0].fields.lastName,
         company: records[0].fields.company,
-        tier: records[0].fields.tier
-      }
+        tier: records[0].fields.tier,
+        isVerified: records[0].fields.isVerified
+      },
+      message: 'Email verified successfully! Account created.'
     });
   } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ error: 'Server error during registration' });
+    console.error('Email verification error:', err);
+    res.status(500).json({ error: 'Server error during email verification' });
+  }
+});
+
+// Resend verification code endpoint
+app.post('/resend-verification', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    // Check if pending registration exists
+    global.pendingRegistrations = global.pendingRegistrations || {};
+    const pendingReg = global.pendingRegistrations[email];
+
+    if (!pendingReg) {
+      return res.status(400).json({ error: 'No pending registration found for this email' });
+    }
+
+    // Send new verification email
+    const verificationResult = await sendEmailVerification(email);
+    
+    // Update pending registration with new code
+    global.pendingRegistrations[email] = {
+      ...pendingReg,
+      verificationCode: verificationResult.verificationCode,
+      expiryTime: verificationResult.expiryTime,
+      timestamp: new Date()
+    };
+
+    console.log(`New verification code sent to ${email}`);
+    
+    // For development, log the preview URL
+    if (verificationResult.previewUrl) {
+      console.log('Email preview URL:', verificationResult.previewUrl);
+    }
+
+    res.json({ 
+      message: 'New verification code sent to your email.',
+      success: true
+    });
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    res.status(500).json({ error: 'Server error sending verification code' });
   }
 });
 

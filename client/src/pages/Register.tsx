@@ -53,9 +53,15 @@ const Register = () => {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate("/dashboard");
+        if (data.requiresVerification) {
+          // Redirect to email verification page
+          navigate('/verify-email', { state: { email: formData.email } });
+        } else {
+          // Old flow - direct login (shouldn't happen with new implementation)
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          navigate("/dashboard");
+        }
       } else {
         const errorData = await response.json();
         if (errorData.error === 'Email already registered') {
