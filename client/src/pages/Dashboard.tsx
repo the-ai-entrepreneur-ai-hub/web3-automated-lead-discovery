@@ -143,12 +143,28 @@ const Dashboard = () => {
     const timestamp = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
     
     if (user?.tier === 'paid') {
-      // Pro users: Full data export
-      const headers = Object.keys(projects[0]);
+      // Premium users: Export project name, website, and socials (only if they exist)
+      const headers = ["Project Name", "Website", "Twitter", "LinkedIn", "Telegram"];
+      
+      // Filter projects that have at least one social media link
+      const projectsWithSocials = projects.filter(p => 
+        p.Twitter || p.LinkedIn || p.Telegram
+      );
+      
       csvContent = "data:text/csv;charset=utf-8,"
         + headers.join(",") + "\n"
-        + projects.map(p => headers.map(header => `"${p[header as keyof Project]}"`).join(",")).join("\n");
-      filename = `web3-project-leads-${date}&${timestamp}.csv`;
+        + projectsWithSocials.map(p => {
+          const row = [
+            `"${p["Project Name"] || ''}"`,
+            `"${p.Website || ''}"`,
+            `"${p.Twitter || ''}"`,
+            `"${p.LinkedIn || ''}"`,
+            `"${p.Telegram || ''}"`
+          ];
+          return row.join(",");
+        }).join("\n");
+      
+      filename = `web3-project-leads-with-socials-${date}&${timestamp}.csv`;
     } else {
       // Free users: Limited data (50 leads, project name and website only)
       const limitedProjects = projects.slice(0, 50);
