@@ -201,6 +201,12 @@ app.post('/register', async (req, res) => {
     };
 
     console.log(`Verification code sent to ${email}`);
+    console.log('Stored verification data:', {
+      email: email,
+      verificationCode: verificationResult.verificationCode,
+      verificationCodeType: typeof verificationResult.verificationCode,
+      expiryTime: verificationResult.expiryTime
+    });
     
     // For development, log the preview URL
     if (verificationResult.previewUrl) {
@@ -233,16 +239,41 @@ app.post('/verify-email', async (req, res) => {
     const pendingReg = global.pendingRegistrations[email];
 
     if (!pendingReg) {
-      return res.status(400).json({ error: 'No pending registration found for this email' });
+      console.log('No pending registration found for email:', email);
+      console.log('Available pending registrations:', Object.keys(global.pendingRegistrations));
+      return res.status(400).json({ 
+        error: 'No pending registration found for this email. The server may have restarted. Please try registering again.' 
+      });
     }
 
     // Check if verification code matches
-    if (pendingReg.verificationCode !== verificationCode) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+    console.log('Verification attempt:', {
+      email: email,
+      receivedCode: verificationCode,
+      receivedCodeType: typeof verificationCode,
+      storedCode: pendingReg.verificationCode,
+      storedCodeType: typeof pendingReg.verificationCode,
+      match: pendingReg.verificationCode === verificationCode
+    });
+    
+    // Convert both to strings for comparison (in case of type issues)
+    const storedCode = String(pendingReg.verificationCode);
+    const receivedCode = String(verificationCode);
+    
+    if (storedCode !== receivedCode) {
+      console.log('Verification code mismatch!');
+      return res.status(400).json({ error: 'Invalid verification code. Please check the code and try again.' });
     }
 
     // Check if code has expired
-    if (new Date() > pendingReg.expiryTime) {
+    const now = new Date();
+    if (now > pendingReg.expiryTime) {
+      console.log('Verification code expired:', {
+        email: email,
+        now: now,
+        expiryTime: pendingReg.expiryTime,
+        expired: now > pendingReg.expiryTime
+      });
       // Clean up expired registration
       delete global.pendingRegistrations[email];
       return res.status(400).json({ error: 'Verification code has expired. Please register again.' });
