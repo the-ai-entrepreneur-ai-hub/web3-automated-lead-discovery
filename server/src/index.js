@@ -41,7 +41,7 @@ app.use(compression()); // Compress responses
 
 // Configure CORS to allow credentials
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io', 'https://web3-automated-lead-discovery.netlify.app'],
   credentials: true
 }));
 
