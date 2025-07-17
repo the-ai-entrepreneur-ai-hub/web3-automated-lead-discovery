@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const compression = require('compression');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
+const { stripe, STRIPE_CONFIG } = require('./stripe');
 require('dotenv').config();
 
 const app = express();
@@ -642,6 +643,197 @@ app.get('/seed', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: 'Email already registered' });
+  }
+});
+
+// Stripe Payment Endpoints
+
+// Create checkout session for subscription
+app.post('/create-checkout-session', authenticateToken, async (req, res) => {
+  try {
+    const user = await userTable.find(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is already subscribed
+    if (user.fields.tier === 'paid') {
+      return res.status(400).json({ error: 'User already has active subscription' });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: STRIPE_CONFIG.CURRENCY,
+            product_data: {
+              name: STRIPE_CONFIG.SUBSCRIPTION_NAME,
+              description: STRIPE_CONFIG.SUBSCRIPTION_DESCRIPTION,
+            },
+            unit_amount: STRIPE_CONFIG.MONTHLY_PRICE,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: STRIPE_CONFIG.SUCCESS_URL,
+      cancel_url: STRIPE_CONFIG.CANCEL_URL,
+      customer_email: user.fields.email,
+      metadata: {
+        userId: req.user.id,
+        userEmail: user.fields.email,
+      },
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Stripe webhook endpoint
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      console.log('Payment succeeded:', session.id);
+      
+      // Update user tier to paid
+      try {
+        await userTable.update([
+          {
+            id: session.metadata.userId,
+            fields: {
+              tier: 'paid',
+              stripeCustomerId: session.customer,
+              stripeSubscriptionId: session.subscription,
+            }
+          }
+        ]);
+        console.log(`User ${session.metadata.userEmail} upgraded to paid tier`);
+      } catch (error) {
+        console.error('Error updating user tier:', error);
+      }
+      break;
+    
+    case 'customer.subscription.deleted':
+      const subscription = event.data.object;
+      console.log('Subscription cancelled:', subscription.id);
+      
+      // Update user tier to free
+      try {
+        const users = await userTable.select({
+          filterByFormula: `{stripeSubscriptionId} = "${subscription.id}"`
+        }).firstPage();
+        
+        if (users.length > 0) {
+          await userTable.update([
+            {
+              id: users[0].id,
+              fields: {
+                tier: 'free',
+                stripeSubscriptionId: '',
+              }
+            }
+          ]);
+          console.log(`User subscription cancelled: ${users[0].fields.email}`);
+        }
+      } catch (error) {
+        console.error('Error updating user tier on cancellation:', error);
+      }
+      break;
+    
+    case 'invoice.payment_failed':
+      const invoice = event.data.object;
+      console.log('Payment failed:', invoice.id);
+      // Handle failed payment (send email, etc.)
+      break;
+    
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+// Get user's subscription status
+app.get('/subscription-status', authenticateToken, async (req, res) => {
+  try {
+    const user = await userTable.find(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let subscriptionStatus = {
+      tier: user.fields.tier || 'free',
+      isActive: user.fields.tier === 'paid',
+      stripeCustomerId: user.fields.stripeCustomerId || null,
+      stripeSubscriptionId: user.fields.stripeSubscriptionId || null,
+    };
+
+    // If user has a subscription, get details from Stripe
+    if (user.fields.stripeSubscriptionId) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(user.fields.stripeSubscriptionId);
+        subscriptionStatus = {
+          ...subscriptionStatus,
+          subscriptionId: subscription.id,
+          status: subscription.status,
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        };
+      } catch (stripeError) {
+        console.error('Error fetching subscription from Stripe:', stripeError);
+      }
+    }
+
+    res.json(subscriptionStatus);
+  } catch (error) {
+    console.error('Error fetching subscription status:', error);
+    res.status(500).json({ error: 'Failed to fetch subscription status' });
+  }
+});
+
+// Cancel subscription
+app.post('/cancel-subscription', authenticateToken, async (req, res) => {
+  try {
+    const user = await userTable.find(req.user.id);
+    
+    if (!user || !user.fields.stripeSubscriptionId) {
+      return res.status(404).json({ error: 'No active subscription found' });
+    }
+
+    // Cancel the subscription at the end of the current period
+    const subscription = await stripe.subscriptions.update(user.fields.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+
+    res.json({ 
+      message: 'Subscription will be cancelled at the end of the current period',
+      cancelAt: subscription.current_period_end 
+    });
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 });
 
