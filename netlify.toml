@@ -1,0 +1,113 @@
+[build]
+  # Build command
+  command = "cd client && npm ci && npm run build"
+  
+  # Directory to publish (relative to root of your repo)
+  publish = "client/dist"
+  
+  # Directory with the serverless functions
+  functions = "server/netlify/functions"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "18"
+  
+  # Build environment
+  NODE_ENV = "production"
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# SPA fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin", "editor"], Country = ["US"]}
+
+# API redirects to your backend server
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-url.com/api/:splat"
+  status = 200
+  force = true
+
+# Specific API endpoints
+[[redirects]]
+  from = "/register"
+  to = "https://your-backend-url.com/register"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/login"
+  to = "https://your-backend-url.com/login"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/verify-email"
+  to = "https://your-backend-url.com/verify-email"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/projects"
+  to = "https://your-backend-url.com/projects"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/profile"
+  to = "https://your-backend-url.com/profile"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/create-checkout-session"
+  to = "https://your-backend-url.com/create-checkout-session"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/subscription-status"
+  to = "https://your-backend-url.com/subscription-status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/cancel-subscription"
+  to = "https://your-backend-url.com/cancel-subscription"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/stripe-webhook"
+  to = "https://your-backend-url.com/stripe-webhook"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/export-premium"
+  to = "https://your-backend-url.com/export-premium"
+  status = 200
+  force = true
+
+# Catch-all for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
