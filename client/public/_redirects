@@ -2,7 +2,7 @@
 /*    /index.html   200
 
 # API redirects to your backend server (replace with your actual backend URL)
-/api/*  https://your-backend-url.com/api/:splat  200
+/api/*  https://web3-prospector-backend.herokuapp.com/:splat  200
 /register  https://your-backend-url.com/register  200
 /login  https://your-backend-url.com/login  200
 /verify-email  https://your-backend-url.com/verify-email  200
