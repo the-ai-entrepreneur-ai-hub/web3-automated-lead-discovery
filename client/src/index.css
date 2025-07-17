@@ -256,4 +256,18 @@
     background-image: radial-gradient(circle at 1px 1px, hsl(180 100% 50% / 0.1) 1px, transparent 0);
     background-size: 20px 20px;
   }
+
+  /* Float animation for decorative elements */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
 }
