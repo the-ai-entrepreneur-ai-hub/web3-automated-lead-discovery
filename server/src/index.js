@@ -98,7 +98,15 @@ app.post('/register', async (req, res) => {
     }
 
     // Send verification email
-    const verificationResult = await sendEmailVerification(email);
+    console.log('Attempting to send verification email to:', email);
+    let verificationResult;
+    try {
+      verificationResult = await sendEmailVerification(email);
+      console.log('Verification email sent successfully');
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError);
+      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+    }
     
     // Store registration data temporarily in memory with verification code
     global.pendingRegistrations = global.pendingRegistrations || {};
