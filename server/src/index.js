@@ -187,26 +187,54 @@ app.post('/register', async (req, res) => {
       return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
     
-    // Store registration data temporarily in memory with verification code
-    global.pendingRegistrations = global.pendingRegistrations || {};
-    global.pendingRegistrations[email] = {
+    // Store registration data in Airtable instead of memory
+    const pendingRegistrationData = {
       email,
       password,
       firstName,
       lastName,
       company,
-      verificationCode: verificationResult.verificationCode,
-      expiryTime: verificationResult.expiryTime,
       timestamp: new Date()
     };
 
-    console.log(`Verification code sent to ${email}`);
-    console.log('Stored verification data:', {
-      email: email,
-      verificationCode: verificationResult.verificationCode,
-      verificationCodeType: typeof verificationResult.verificationCode,
-      expiryTime: verificationResult.expiryTime
-    });
+    try {
+      // Create or update pending registration record in Airtable
+      const pendingRecord = await userTable.create([
+        {
+          fields: {
+            email: email,
+            verificationCode: verificationResult.verificationCode,
+            verificationCodeExpiry: verificationResult.expiryTime.toISOString(),
+            pendingRegistration: JSON.stringify(pendingRegistrationData),
+            isVerified: false
+          }
+        }
+      ]);
+
+      console.log(`Verification code sent to ${email}`);
+      console.log('Stored verification data in Airtable:', {
+        email: email,
+        verificationCode: verificationResult.verificationCode,
+        verificationCodeType: typeof verificationResult.verificationCode,
+        expiryTime: verificationResult.expiryTime,
+        recordId: pendingRecord[0].id
+      });
+    } catch (airtableError) {
+      console.error('Error storing verification data in Airtable:', airtableError);
+      // If Airtable fails, fall back to in-memory storage
+      global.pendingRegistrations = global.pendingRegistrations || {};
+      global.pendingRegistrations[email] = {
+        email,
+        password,
+        firstName,
+        lastName,
+        company,
+        verificationCode: verificationResult.verificationCode,
+        expiryTime: verificationResult.expiryTime,
+        timestamp: new Date()
+      };
+      console.log('Fallback: Stored verification data in memory');
+    }
     
     // For development, log the preview URL
     if (verificationResult.previewUrl) {
@@ -234,32 +262,84 @@ app.post('/verify-email', async (req, res) => {
   }
 
   try {
-    // Check if pending registration exists
-    global.pendingRegistrations = global.pendingRegistrations || {};
-    const pendingReg = global.pendingRegistrations[email];
+    // Check if pending registration exists in Airtable
+    const pendingUsers = await userTable.select({
+      filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
+    }).firstPage();
 
-    if (!pendingReg) {
-      console.log('No pending registration found for email:', email);
-      console.log('Available pending registrations:', Object.keys(global.pendingRegistrations));
-      return res.status(400).json({ 
-        error: 'No pending registration found for this email. The server may have restarted. Please try registering again.' 
+    if (pendingUsers.length === 0) {
+      // Fall back to in-memory storage
+      global.pendingRegistrations = global.pendingRegistrations || {};
+      const pendingReg = global.pendingRegistrations[email];
+
+      if (!pendingReg) {
+        console.log('No pending registration found for email:', email);
+        return res.status(400).json({ 
+          error: 'No pending registration found for this email. Please try registering again.' 
+        });
+      }
+
+      // Handle in-memory verification (fallback)
+      const storedCode = String(pendingReg.verificationCode);
+      const receivedCode = String(verificationCode);
+      
+      if (storedCode !== receivedCode) {
+        return res.status(400).json({ error: 'Invalid verification code. Please check the code and try again.' });
+      }
+
+      if (new Date() > pendingReg.expiryTime) {
+        delete global.pendingRegistrations[email];
+        return res.status(400).json({ error: 'Verification code has expired. Please register again.' });
+      }
+
+      // Create user account from memory
+      const hashedPassword = await bcrypt.hash(pendingReg.password, 10);
+      const records = await userTable.create([
+        {
+          fields: {
+            email: pendingReg.email,
+            password: hashedPassword,
+            tier: 'free',
+            firstName: pendingReg.firstName,
+            lastName: pendingReg.lastName,
+            company: pendingReg.company,
+            isVerified: true
+          }
+        }
+      ]);
+
+      delete global.pendingRegistrations[email];
+      
+      // Generate JWT token
+      const token = jwt.sign({ id: records[0].id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      
+      return res.json({ 
+        token, 
+        user: {
+          id: records[0].id,
+          email: records[0].fields.email,
+          firstName: records[0].fields.firstName,
+          lastName: records[0].fields.lastName,
+          company: records[0].fields.company,
+          tier: records[0].fields.tier,
+          isVerified: records[0].fields.isVerified
+        },
+        message: 'Email verified successfully! Account created.'
       });
     }
 
-    // Check if verification code matches
-    console.log('Verification attempt:', {
-      email: email,
-      receivedCode: verificationCode,
-      receivedCodeType: typeof verificationCode,
-      storedCode: pendingReg.verificationCode,
-      storedCodeType: typeof pendingReg.verificationCode,
-      match: pendingReg.verificationCode === verificationCode
-    });
-    
-    // Convert both to strings for comparison (in case of type issues)
-    const storedCode = String(pendingReg.verificationCode);
+    // Handle Airtable verification
+    const pendingUser = pendingUsers[0];
+    const storedCode = String(pendingUser.fields.verificationCode);
     const receivedCode = String(verificationCode);
-    
+
+    console.log('Verification attempt from Airtable:', {
+      email: email,
+      receivedCode: receivedCode,
+      storedCode: storedCode,
+      match: storedCode === receivedCode
+    });
+
     if (storedCode !== receivedCode) {
       console.log('Verification code mismatch!');
       return res.status(400).json({ error: 'Invalid verification code. Please check the code and try again.' });
@@ -267,53 +347,58 @@ app.post('/verify-email', async (req, res) => {
 
     // Check if code has expired
     const now = new Date();
-    if (now > pendingReg.expiryTime) {
+    const expiryTime = new Date(pendingUser.fields.verificationCodeExpiry);
+    
+    if (now > expiryTime) {
       console.log('Verification code expired:', {
         email: email,
         now: now,
-        expiryTime: pendingReg.expiryTime,
-        expired: now > pendingReg.expiryTime
+        expiryTime: expiryTime,
+        expired: now > expiryTime
       });
+      
       // Clean up expired registration
-      delete global.pendingRegistrations[email];
+      await userTable.destroy([pendingUser.id]);
       return res.status(400).json({ error: 'Verification code has expired. Please register again.' });
     }
 
-    // Create the user account
-    const hashedPassword = await bcrypt.hash(pendingReg.password, 10);
+    // Get the pending registration data
+    const pendingData = JSON.parse(pendingUser.fields.pendingRegistration);
+    const hashedPassword = await bcrypt.hash(pendingData.password, 10);
 
-    const records = await userTable.create([
+    // Update the user record to complete registration
+    const updatedUser = await userTable.update([
       {
+        id: pendingUser.id,
         fields: {
-          email: pendingReg.email,
           password: hashedPassword,
           tier: 'free',
-          firstName: pendingReg.firstName,
-          lastName: pendingReg.lastName,
-          company: pendingReg.company,
-          isVerified: true
+          firstName: pendingData.firstName,
+          lastName: pendingData.lastName,
+          company: pendingData.company,
+          isVerified: true,
+          verificationCode: '', // Clear the verification code
+          verificationCodeExpiry: null,
+          pendingRegistration: '' // Clear pending data
         }
       }
     ]);
 
-    // Clean up pending registration
-    delete global.pendingRegistrations[email];
-
     // Generate JWT token
-    const token = jwt.sign({ id: records[0].id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+    const token = jwt.sign({ id: updatedUser[0].id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
     
     console.log(`Email verified and account created for ${email}`);
     
     res.json({ 
       token, 
       user: {
-        id: records[0].id,
-        email: records[0].fields.email,
-        firstName: records[0].fields.firstName,
-        lastName: records[0].fields.lastName,
-        company: records[0].fields.company,
-        tier: records[0].fields.tier,
-        isVerified: records[0].fields.isVerified
+        id: updatedUser[0].id,
+        email: updatedUser[0].fields.email,
+        firstName: updatedUser[0].fields.firstName,
+        lastName: updatedUser[0].fields.lastName,
+        company: updatedUser[0].fields.company,
+        tier: updatedUser[0].fields.tier,
+        isVerified: updatedUser[0].fields.isVerified
       },
       message: 'Email verified successfully! Account created.'
     });
@@ -332,26 +417,59 @@ app.post('/resend-verification', async (req, res) => {
   }
 
   try {
-    // Check if pending registration exists
-    global.pendingRegistrations = global.pendingRegistrations || {};
-    const pendingReg = global.pendingRegistrations[email];
+    // Check if pending registration exists in Airtable
+    const pendingUsers = await userTable.select({
+      filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
+    }).firstPage();
 
-    if (!pendingReg) {
-      return res.status(400).json({ error: 'No pending registration found for this email' });
+    if (pendingUsers.length === 0) {
+      // Fall back to in-memory storage
+      global.pendingRegistrations = global.pendingRegistrations || {};
+      const pendingReg = global.pendingRegistrations[email];
+
+      if (!pendingReg) {
+        return res.status(400).json({ error: 'No pending registration found for this email' });
+      }
+
+      // Send new verification email
+      const verificationResult = await sendEmailVerification(email);
+      
+      // Update pending registration with new code
+      global.pendingRegistrations[email] = {
+        ...pendingReg,
+        verificationCode: verificationResult.verificationCode,
+        expiryTime: verificationResult.expiryTime,
+        timestamp: new Date()
+      };
+
+      console.log(`New verification code sent to ${email} (memory)`);
+      
+      if (verificationResult.previewUrl) {
+        console.log('Email preview URL:', verificationResult.previewUrl);
+      }
+
+      return res.json({ 
+        message: 'New verification code sent to your email.',
+        success: true
+      });
     }
 
-    // Send new verification email
+    // Handle Airtable resend
+    const pendingUser = pendingUsers[0];
     const verificationResult = await sendEmailVerification(email);
     
-    // Update pending registration with new code
-    global.pendingRegistrations[email] = {
-      ...pendingReg,
-      verificationCode: verificationResult.verificationCode,
-      expiryTime: verificationResult.expiryTime,
-      timestamp: new Date()
-    };
+    // Update the record with new verification code
+    await userTable.update([
+      {
+        id: pendingUser.id,
+        fields: {
+          verificationCode: verificationResult.verificationCode,
+          verificationCodeExpiry: verificationResult.expiryTime.toISOString()
+        }
+      }
+    ]);
 
-    console.log(`New verification code sent to ${email}`);
+    console.log(`New verification code sent to ${email} (Airtable)`);
     
     // For development, log the preview URL
     if (verificationResult.previewUrl) {
@@ -871,6 +989,39 @@ app.post('/cancel-subscription', authenticateToken, async (req, res) => {
   }
 });
 
+
+// Cleanup function for expired verification codes
+const cleanupExpiredVerificationCodes = async () => {
+  try {
+    console.log('Cleaning up expired verification codes...');
+    
+    // Get all pending registrations with expired codes
+    const now = new Date().toISOString();
+    const expiredRecords = await userTable.select({
+      filterByFormula: `AND({verificationCode} != "", {isVerified} = FALSE(), {verificationCodeExpiry} < "${now}")`
+    }).firstPage();
+
+    if (expiredRecords.length > 0) {
+      console.log(`Found ${expiredRecords.length} expired verification codes to clean up`);
+      
+      // Delete expired records
+      const recordIds = expiredRecords.map(record => record.id);
+      await userTable.destroy(recordIds);
+      
+      console.log(`Cleaned up ${recordIds.length} expired verification codes`);
+    } else {
+      console.log('No expired verification codes found');
+    }
+  } catch (error) {
+    console.error('Error cleaning up expired verification codes:', error);
+  }
+};
+
+// Run cleanup every 30 minutes
+setInterval(cleanupExpiredVerificationCodes, 30 * 60 * 1000);
+
+// Run cleanup on startup
+cleanupExpiredVerificationCodes();
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
