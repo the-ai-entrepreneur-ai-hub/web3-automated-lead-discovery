@@ -297,6 +297,13 @@ const sendEmailVerification = async (userEmail) => {
         };
       } catch (resendError) {
         console.log('Resend failed, falling back to test email:', resendError.message);
+        
+        // Check if it's a domain verification issue
+        if (resendError.message.includes('verify a domain')) {
+          console.log('⚠️  Resend requires domain verification for external emails');
+          console.log('📧 Using test email service as fallback');
+        }
+        
         // Fallback to test email if Resend fails
         const result = await sendVerificationEmailFallback(userEmail, verificationCode);
         return {
