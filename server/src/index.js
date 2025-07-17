@@ -187,50 +187,39 @@ app.post('/register', async (req, res) => {
       return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
     
-    // Store registration data in Airtable instead of memory
-    const pendingRegistrationData = {
-      email,
-      password,
-      firstName,
-      lastName,
-      company,
-      timestamp: new Date()
-    };
-
+    // Try to store verification data in Airtable, fallback to memory if fields don't exist
+    let usingAirtable = false;
     try {
-      // Create or update pending registration record in Airtable
-      const pendingRecord = await userTable.create([
+      // Create pending user record in Airtable with verification data
+      const pendingUser = await userTable.create([
         {
           fields: {
             email: email,
             verificationCode: verificationResult.verificationCode,
             verificationCodeExpiry: verificationResult.expiryTime.toISOString(),
-            pendingRegistration: JSON.stringify(pendingRegistrationData),
-            isVerified: false
+            isVerified: false,
+            pendingRegistration: JSON.stringify({
+              password,
+              firstName,
+              lastName,
+              company,
+              timestamp: new Date()
+            })
           }
         }
       ]);
-
-      console.log(`Verification code sent to ${email}`);
-      console.log('Stored verification data in Airtable:', {
-        email: email,
-        verificationCode: verificationResult.verificationCode,
-        verificationCodeType: typeof verificationResult.verificationCode,
-        expiryTime: verificationResult.expiryTime,
-        recordId: pendingRecord[0].id
-      });
+      
+      console.log(`Verification data stored in Airtable for ${email}`);
+      console.log('Airtable record ID:', pendingUser[0].id);
+      usingAirtable = true;
     } catch (airtableError) {
-      console.error('Error storing verification data in Airtable:', airtableError);
-      
-      if (airtableError.message.includes('Unknown field names')) {
-        console.log('⚠️  Airtable verification fields missing. Add these fields to your Users table:');
-        console.log('   - verificationCode (Single line text)');
-        console.log('   - verificationCodeExpiry (Date/time)');
-        console.log('   - isVerified (Checkbox)');
-        console.log('   - pendingRegistration (Long text)');
-      }
-      
-      // If Airtable fails, fall back to in-memory storage
+      console.log('Airtable verification fields not available, using in-memory storage');
+      console.log('Airtable error:', airtableError.message);
+      usingAirtable = false;
+    }
+
+    if (!usingAirtable) {
+      // Fallback to in-memory storage
       global.pendingRegistrations = global.pendingRegistrations || {};
       global.pendingRegistrations[email] = {
         email,
@@ -242,8 +231,17 @@ app.post('/register', async (req, res) => {
         expiryTime: verificationResult.expiryTime,
         timestamp: new Date()
       };
-      console.log('Fallback: Stored verification data in memory');
+      console.log('Stored verification data in memory');
     }
+    
+    console.log(`Verification code sent to ${email}`);
+    console.log('Verification data stored:', {
+      email: email,
+      verificationCode: verificationResult.verificationCode,
+      verificationCodeType: typeof verificationResult.verificationCode,
+      expiryTime: verificationResult.expiryTime,
+      storage: usingAirtable ? 'Airtable' : 'Memory'
+    });
     
     // For development, log the preview URL
     if (verificationResult.previewUrl) {
@@ -271,12 +269,21 @@ app.post('/verify-email', async (req, res) => {
   }
 
   try {
-    // Check if pending registration exists in Airtable
-    const pendingUsers = await userTable.select({
-      filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
-    }).firstPage();
+    // Try to check if pending registration exists in Airtable first
+    let pendingUsers = [];
+    let usingAirtable = false;
+    
+    try {
+      pendingUsers = await userTable.select({
+        filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
+      }).firstPage();
+      usingAirtable = true;
+    } catch (airtableError) {
+      console.log('Airtable verification fields not available, using in-memory storage');
+      usingAirtable = false;
+    }
 
-    if (pendingUsers.length === 0) {
+    if (!usingAirtable || pendingUsers.length === 0) {
       // Fall back to in-memory storage
       global.pendingRegistrations = global.pendingRegistrations || {};
       const pendingReg = global.pendingRegistrations[email];
@@ -426,12 +433,21 @@ app.post('/resend-verification', async (req, res) => {
   }
 
   try {
-    // Check if pending registration exists in Airtable
-    const pendingUsers = await userTable.select({
-      filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
-    }).firstPage();
+    // Try to check if pending registration exists in Airtable first
+    let pendingUsers = [];
+    let usingAirtable = false;
+    
+    try {
+      pendingUsers = await userTable.select({
+        filterByFormula: `AND({email} = "${email}", {verificationCode} != "", {isVerified} = FALSE())`
+      }).firstPage();
+      usingAirtable = true;
+    } catch (airtableError) {
+      console.log('Airtable verification fields not available, using in-memory storage');
+      usingAirtable = false;
+    }
 
-    if (pendingUsers.length === 0) {
+    if (!usingAirtable || pendingUsers.length === 0) {
       // Fall back to in-memory storage
       global.pendingRegistrations = global.pendingRegistrations || {};
       const pendingReg = global.pendingRegistrations[email];
