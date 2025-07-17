@@ -14,17 +14,20 @@ const passwordResetTemplate = (resetToken, userEmail) => {
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #f0f0f0;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 255, 0.1) 0%, #0F0F23 50%);
+            background-size: 100% 100%;
+            min-height: 100vh;
           }
           .container {
-            background-color: white;
+            background: #1A1A2E;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px -10px rgba(15, 15, 35, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
           }
           .header {
             text-align: center;
@@ -33,57 +36,94 @@ const passwordResetTemplate = (resetToken, userEmail) => {
           .logo {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             margin-bottom: 20px;
+            justify-content: center;
           }
-          .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: inline-flex;
+          .logo-container {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
+          }
+          .logo-main {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #00FFFF 0%, #40E0D0 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+          }
+          .logo-float {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #00FFFF 0%, #40E0D0 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+            animation: slowFloat 4s ease-in-out infinite;
+          }
+          @keyframes slowFloat {
+            0%, 100% {
+              transform: translateY(0px) translateX(0px);
+            }
+            25% {
+              transform: translateY(-3px) translateX(1px);
+            }
+            50% {
+              transform: translateY(-6px) translateX(0px);
+            }
+            75% {
+              transform: translateY(-3px) translateX(-1px);
+            }
           }
           .logo-text {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
-            color: #333;
+            color: #f0f0f0;
+            letter-spacing: -0.5px;
           }
           .logo-text .highlight {
-            color: #667eea;
+            color: #00FFFF;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
           }
           h1 {
-            color: #333;
+            color: #f0f0f0;
             margin-bottom: 20px;
-            font-size: 28px;
+            font-size: 32px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
           }
           .content {
             margin-bottom: 30px;
+            color: #d0d0d0;
           }
           .reset-button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 30px;
+            background: linear-gradient(135deg, #00FFFF 0%, #40E0D0 100%);
+            color: #0F0F23;
+            padding: 18px 36px;
             text-decoration: none;
             border-radius: 8px;
             font-weight: bold;
             font-size: 16px;
             margin: 20px 0;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            border: 2px solid rgba(0, 255, 255, 0.5);
           }
           .reset-button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
           }
           .security-notice {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #FFD700;
+            padding: 18px;
             border-radius: 8px;
             margin: 20px 0;
           }
@@ -91,18 +131,29 @@ const passwordResetTemplate = (resetToken, userEmail) => {
             text-align: center;
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            color: #888;
             font-size: 14px;
           }
           .footer a {
-            color: #667eea;
+            color: #00FFFF;
             text-decoration: none;
           }
+          .footer a:hover {
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+          }
           .expiry-info {
-            color: #666;
+            color: #aaa;
             font-size: 14px;
             margin-top: 15px;
+          }
+          .expiry-info strong {
+            color: #00FFFF;
+          }
+          .tagline {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
           }
         </style>
       </head>
@@ -110,9 +161,13 @@ const passwordResetTemplate = (resetToken, userEmail) => {
         <div class="container">
           <div class="header">
             <div class="logo">
-              <div class="logo-icon">W3</div>
+              <div class="logo-container">
+                <div class="logo-main"></div>
+                <div class="logo-float"></div>
+              </div>
               <div class="logo-text">Web3<span class="highlight">Radar</span></div>
             </div>
+            <div class="tagline">Automated Lead Discovery</div>
             <h1>Reset Your Password</h1>
           </div>
           
@@ -145,7 +200,7 @@ const passwordResetTemplate = (resetToken, userEmail) => {
           </div>
           
           <div class="footer">
-            <p>Need help? Contact our support team at <a href="mailto:support@web3radar.com">support@web3radar.com</a></p>
+            <p>Need help? Contact our support team at <a href="mailto:support@rawfreedomai.com">support@rawfreedomai.com</a></p>
             <p>© 2024 Web3Radar. All rights reserved.</p>
             <p>Automated Lead Discovery for Web3 Projects</p>
           </div>
@@ -170,7 +225,7 @@ const passwordResetTemplate = (resetToken, userEmail) => {
       - You can only use this link once
       - If you didn't request this reset, please ignore this email
       
-      Need help? Contact our support team at support@web3radar.com
+      Need help? Contact our support team at support@rawfreedomai.com
       
       © 2024 Web3Radar. All rights reserved.
       Automated Lead Discovery for Web3 Projects
