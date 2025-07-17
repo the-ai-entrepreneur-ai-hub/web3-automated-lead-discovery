@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Header from "@/components/Header";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -40,7 +41,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background hero-bg network-bg px-6">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="flex items-center justify-center bg-background hero-bg network-bg px-6 py-20">
       {/* Floating Elements */}
       <div className="absolute top-20 left-20 w-4 h-4 bg-primary rounded-full animate-float opacity-60"></div>
       <div className="absolute top-32 right-32 w-6 h-6 bg-primary rounded-full animate-float opacity-40" style={{animationDelay: '1s'}}></div>
@@ -49,8 +52,9 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md relative z-10">
         <Card className="card-web3 border-glow">
           <CardHeader className="text-center">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-primary-foreground font-bold text-lg">W3</span>
+            <div className="relative w-12 h-12 flex items-center justify-center mx-auto mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full shadow-lg"></div>
+              <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-gradient-to-br from-primary to-primary/80 rounded-full shadow-md animate-[slowFloat_4s_ease-in-out_infinite]"></div>
             </div>
             <CardTitle className="text-2xl text-glow">Reset Password</CardTitle>
             <CardDescription>
@@ -100,6 +104,7 @@ const ForgotPassword = () => {
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ const Hero = () => {
             variant="outline" 
             size="lg" 
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
           >
             See Demo
           </Button>

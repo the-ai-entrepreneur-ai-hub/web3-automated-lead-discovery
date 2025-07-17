@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState, useRef } from "react";
-import { UserCircle, LogOut } from "lucide-react";
+import Header from "@/components/Header";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { User } from "@/lib/types";
 
 interface LeadAnalysis {
@@ -34,14 +35,13 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [user, setUser] = useState<User | null>(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [visibleProjects, setVisibleProjects] = useState(6);
-  const profileModalRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:3006/projects');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/projects`);
         if (response.ok) {
           const data = await response.json();
           setProjects(data);
@@ -56,7 +56,7 @@ const Dashboard = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch('http://localhost:3006/profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -76,92 +76,117 @@ const Dashboard = () => {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileModalRef.current && !profileModalRef.current.contains(event.target as Node)) {
-        setIsProfileModalOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [profileModalRef]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-  };
 
   const handleExport = () => {
     if (projects.length === 0) {
       return;
     }
-    const headers = Object.keys(projects[0]);
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + projects.map(p => headers.map(header => `"${p[header as keyof Project]}"`).join(",")).join("\n");
+    
+    let csvContent;
+    let filename;
+    const now = new Date();
+    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timestamp = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+    
+    if (user?.tier === 'paid') {
+      // Pro users: Full data export
+      const headers = Object.keys(projects[0]);
+      csvContent = "data:text/csv;charset=utf-8,"
+        + headers.join(",") + "\n"
+        + projects.map(p => headers.map(header => `"${p[header as keyof Project]}"`).join(",")).join("\n");
+      filename = `web3-project-leads-${date}&${timestamp}.csv`;
+    } else {
+      // Free users: Limited data (50 leads, project name and website only)
+      const limitedProjects = projects.slice(0, 50);
+      const headers = ["Project Name", "Website"];
+      csvContent = "data:text/csv;charset=utf-8,"
+        + headers.join(",") + "\n"
+        + limitedProjects.map(p => `"${p["Project Name"]}","${p.Website}"`).join("\n");
+      filename = `web3-project-leads-sample-${date}&${timestamp}.csv`;
+    }
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "projects.csv");
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   const handleLoadMore = () => {
     setVisibleProjects(prevVisibleProjects => prevVisibleProjects + 6);
   };
 
-  const categories = ["All", "New Lead", "Contacted", "In-progress", "Closed"];
+  const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
   const filteredProjects = projects.filter(project => {
     const matchesSearch = (project["Project Name"] && project["Project Name"].toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (project["Lead Summary"] && project["Lead Summary"].value && project["Lead Summary"].value.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "All" || project.Status === selectedCategory;
+    
+    let matchesCategory = true;
+    if (selectedCategory !== "All") {
+      const dateAdded = new Date(project["Date Added"]);
+      const daysSinceAdded = Math.floor((Date.now() - dateAdded.getTime()) / (1000 * 60 * 60 * 24));
+      
+      switch (selectedCategory) {
+        case "Recently Added":
+          matchesCategory = daysSinceAdded <= 7;
+          break;
+        case "High Funding":
+          matchesCategory = project.Source === "CoinMarketCap" || project.Source === "CryptoRank";
+          break;
+        case "Early Stage":
+          matchesCategory = project.Source === "ICO Drops" || daysSinceAdded <= 30;
+          break;
+        case "Mainnet Live":
+          matchesCategory = project.Source === "CoinMarketCap" || project.Source === "DeFiLlama";
+          break;
+        case "Token Launch":
+          matchesCategory = project.Source === "ICO Drops" || project.Source === "CoinMarketCap";
+          break;
+        case "Hiring":
+          matchesCategory = project.Source === "CryptoRank" || project.LinkedIn;
+          break;
+        default:
+          matchesCategory = true;
+      }
+    }
+    
     return matchesSearch && matchesCategory;
   });
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
+      <Header />
+      
+      {/* Dashboard Content Header */}
+      <div className="bg-card/50 border-b border-border/50">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                Web3Radar Curated Leads
+                Web3Radar Latest Curated Leads
               </h1>
               <p className="text-muted-foreground">
-                Discover and connect with the latest Web3 projects leads with just a click!
+                Get and connect with the latest Web3 projects leads with just a click!
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={handleExport}>
-                Export Data
+              <Button 
+                variant="outline" 
+                onClick={handleExport}
+              >
+                {user?.tier === 'paid' ? 'Export All Data' : 'Export Sample (50 Leads)'}
               </Button>
               {user?.tier !== 'paid' && (
-                <Button className="btn-web3">
+                <Button 
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                  onClick={() => navigate('/register')}
+                >
                   Upgrade to Pro
                 </Button>
               )}
-              <div className="relative" ref={profileModalRef}>
-                <UserCircle className="h-8 w-8 text-muted-foreground cursor-pointer" onClick={() => setIsProfileModalOpen(!isProfileModalOpen)} />
-                {isProfileModalOpen && user &&
-                  <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-10">
-                    <div className="px-4 py-2 text-sm text-foreground">
-                      <p className="font-bold">{user.firstName} {user.lastName}</p>
-                      <p className="text-muted-foreground">{user.email}</p>
-                      <p className="text-muted-foreground">{user.company}</p>
-                      <p className="text-muted-foreground capitalize">{user.tier} User</p>
-                    </div>
-                  </div>
-                }
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </div>
@@ -169,7 +194,7 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="card-web3">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Total Projects</CardTitle>
@@ -195,15 +220,6 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold text-primary">3,891</div>
               <div className="text-xs text-muted-foreground">38% of total</div>
-            </CardContent>
-          </Card>
-          <Card className="card-web3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Contact Available</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">8,756</div>
-              <div className="text-xs text-muted-foreground">85% of total</div>
             </CardContent>
           </Card>
         </div>
@@ -234,62 +250,132 @@ const Dashboard = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredProjects.slice(0, visibleProjects).map((project) => (
-            <Card key={project["Lead ID"]} className="card-web3 hover:glow-effect">
-              <CardHeader>
+          {filteredProjects.slice(0, user?.tier === 'paid' ? visibleProjects : Math.min(visibleProjects, 100)).map((project) => (
+            <Card key={project["Lead ID"]} className="card-web3 hover:glow-effect group transition-all duration-300">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-xl text-primary mb-2">
+                    <CardTitle className="text-xl text-primary mb-1 group-hover:text-primary/80 transition-colors">
                       {project["Project Name"]}
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {project["Lead Summary"]?.value}
-                    </CardDescription>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20">
+                        {project.Source}
+                      </Badge>
+                      <span className="text-xs">• Added {project["Date Added"]}</span>
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="ml-4">
-                    {project.Status}
-                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Source:</span>
-                    <div className="font-medium text-foreground">{project.Source}</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Date Added:</span>
-                    <div className="font-medium text-foreground">{project["Date Added"]}</div>
-                  </div>
+                {/* Website - Always visible */}
+                <div className="p-3 bg-card/50 rounded-lg border border-border/50">
+                  <div className="text-sm font-medium text-muted-foreground mb-1">Website</div>
+                  <a 
+                    href={project.Website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 transition-colors font-medium break-all"
+                  >
+                    {project.Website}
+                  </a>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Website:</span>
-                    <a href={project.Website} target="_blank" rel="noopener noreferrer"
-                       className="ml-2 text-primary hover:underline">
-                      {project.Website}
-                    </a>
+                {/* Contact Information - Premium Feature */}
+                {user?.tier === 'paid' ? (
+                  <div className="p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                    <div className="text-sm font-medium text-foreground mb-2">Direct Contact</div>
+                    <div className="text-sm text-foreground font-medium break-all">
+                      {project.Email}
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Contact:</span>
-                    <span className="ml-2 text-foreground">{project.Email}</span>
+                ) : (
+                  <div className="p-3 bg-gradient-to-r from-amber-500/5 to-amber-500/10 rounded-lg border border-amber-500/20 relative">
+                    <div className="text-sm font-medium text-foreground mb-2">Direct Contact</div>
+                    <div className="text-sm text-muted-foreground font-medium blur-sm select-none">
+                      contact@••••••••••••••.com
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-card/80 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-amber-600 mb-1">🔒 Pro Feature</div>
+                        <Button 
+                          size="sm" 
+                          className="text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                          onClick={() => navigate('/register')}
+                        >
+                          Upgrade to Pro
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-2 text-sm">
-                    <span className="text-muted-foreground">Social:</span>
-                    <a href={project.Twitter} className="text-primary hover:underline">Twitter</a>
-                    <span className="text-muted-foreground">•</span>
-                    <a href={project.LinkedIn} className="text-primary hover:underline">LinkedIn</a>
-                  </div>
-                </div>
+                )}
 
-                <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline" className="flex-1">
-                    View Details
-                  </Button>
-                  <Button size="sm" className="flex-1 btn-web3">
-                    Add to CRM
-                  </Button>
+                {/* Social Media Links - Premium Feature */}
+                {user?.tier === 'paid' ? (
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="text-sm text-muted-foreground">Socials:</span>
+                    <div className="flex gap-3">
+                      <a 
+                        href={project.Twitter} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                      >
+                        Twitter
+                      </a>
+                      <span className="text-muted-foreground">•</span>
+                      <a 
+                        href={project.LinkedIn} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                      >
+                        LinkedIn
+                      </a>
+                      <span className="text-muted-foreground">•</span>
+                      <a 
+                        href={project.Telegram} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                      >
+                        Telegram
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 pt-2 relative">
+                    <span className="text-sm text-muted-foreground">Socials:</span>
+                    <div className="flex gap-3 blur-sm select-none">
+                      <span className="text-primary text-sm font-medium">Twitter</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-primary text-sm font-medium">LinkedIn</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-primary text-sm font-medium">Telegram</span>
+                    </div>
+                    <div className="absolute right-0 top-0">
+                      <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        Pro Only
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Value Proposition */}
+                <div className="pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium text-foreground">
+                        {user?.tier === 'paid' ? 'Ready to Contact' : 'Preview Mode'}
+                      </span>
+                    </div>
+                    {user?.tier !== 'paid' && (
+                      <div className="text-xs text-muted-foreground">
+                        {filteredProjects.length - 100 > 0 ? `+${filteredProjects.length - 100} more with Pro` : 'Limited to 100 companies'}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -297,12 +383,34 @@ const Dashboard = () => {
         </div>
 
         {/* Load More */}
-        {visibleProjects < filteredProjects.length && (
-          <div className="text-center mt-12">
-            <Button size="lg" variant="outline" className="px-8" onClick={handleLoadMore}>
-              Load More Projects
-            </Button>
-          </div>
+        {user?.tier === 'paid' ? (
+          visibleProjects < filteredProjects.length && (
+            <div className="text-center mt-12">
+              <Button size="lg" variant="outline" className="px-8" onClick={handleLoadMore}>
+                Load More Projects
+              </Button>
+            </div>
+          )
+        ) : (
+          visibleProjects >= 100 && filteredProjects.length > 100 && (
+            <div className="text-center mt-12">
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-2xl p-8 border border-primary/20">
+                <div className="text-xl font-bold text-foreground mb-4">
+                  Want to see {filteredProjects.length - 100} more projects?
+                </div>
+                <p className="text-muted-foreground mb-6">
+                  Upgrade to Pro to access our complete database of Web3 projects, contact information, and advanced filtering tools.
+                </p>
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 px-8"
+                  onClick={() => navigate('/register')}
+                >
+                  Upgrade to Pro - $99/month
+                </Button>
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>

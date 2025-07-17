@@ -235,6 +235,22 @@
     }
   }
 
+  /* Custom slow float animation for logo */
+  @keyframes slowFloat {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+    }
+    25% {
+      transform: translateY(-3px) translateX(1px);
+    }
+    50% {
+      transform: translateY(-6px) translateX(0px);
+    }
+    75% {
+      transform: translateY(-3px) translateX(-1px);
+    }
+  }
+
   /* Network/Grid Pattern */
   .network-bg {
     background-image: radial-gradient(circle at 1px 1px, hsl(180 100% 50% / 0.1) 1px, transparent 0);

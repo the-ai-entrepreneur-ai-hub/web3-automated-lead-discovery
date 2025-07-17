@@ -8,11 +8,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">W3</span>
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 rounded-full shadow-lg"></div>
+                <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-gradient-to-br from-primary to-primary/80 rounded-full shadow-md animate-[slowFloat_4s_ease-in-out_infinite]"></div>
               </div>
               <span className="text-xl font-bold text-foreground">
-                Web3<span className="text-primary">Leads</span>
+                Web3<span className="text-primary">Radar</span>
               </span>
             </div>
             <p className="text-muted-foreground">
