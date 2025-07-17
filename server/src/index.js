@@ -295,8 +295,11 @@ app.get('/projects', (req, res) => {
     });
     fetchNextPage();
   }, function done(err) {
-    if (err) { console.error(err); return; }
-    console.log('Projects from Airtable:', projects);
+    if (err) { 
+      console.error('Airtable error:', err); 
+      return res.status(500).json({ error: 'Failed to fetch projects from Airtable' });
+    }
+    console.log(`Successfully fetched ${projects.length} projects from Airtable`);
     res.json(projects);
   });
 });
