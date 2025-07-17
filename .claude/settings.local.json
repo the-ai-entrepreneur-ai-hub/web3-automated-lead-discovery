@@ -28,7 +28,18 @@
       "Bash(timeout:*)",
       "Bash(kill:*)",
       "Bash(time curl:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm test)",
+      "Bash(ss:*)",
+      "Bash(cmd.exe /c \"git commit -m \"\"Fix premium export and email verification issues - Premium export now fetches ALL records with social contacts from database - Updated Resend API key and fixed email implementation - Fixed signup email verification with proper error handling and fallback - Added dedicated /export-premium endpoint for better data fetching - Enhanced email verification service with proper Resend integration - Updated FROM_EMAIL to use verified domain (onboarding@resend.dev) 🤖 Generated with [Claude Code](https://claude.ai/code) Co-Authored-By: Claude <noreply@anthropic.com>\"\"\")",
+      "Bash(cmd.exe /c \"git commit -m \"\"Fix premium export and email verification issues\"\"\")",
+      "Bash(cmd.exe /c \"git commit -m \"\"Fix premium export and email verification\"\"\")",
+      "Bash(cmd.exe /c \"git status\")",
+      "Bash(cmd.exe /c \"git add ../client/src/pages/Dashboard.tsx\")",
+      "Bash(cmd.exe /c \"git commit -m \"\"Update premium export and email verification\"\"\")",
+      "Bash(powershell.exe:*)",
+      "Bash(cmd.exe /c \"git add .\")",
+      "Bash(cmd.exe /c \"git add .claude/settings.local.json\")"
     ],
     "deny": []
   }
