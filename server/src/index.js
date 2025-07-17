@@ -166,16 +166,22 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
     
     console.log('Login successful for user:', user.fields.email);
+    console.log('Login - User ID:', user.id);
+    console.log('Login - Full user record:', user.fields);
+    
+    const userResponse = {
+      id: user.id,
+      email: user.fields.email,
+      firstName: user.fields.firstName,
+      lastName: user.fields.lastName,
+      company: user.fields.company,
+      tier: user.fields.tier
+    };
+    
+    console.log('Login - Returning user data:', userResponse);
     res.json({ 
       token,
-      user: {
-        id: user.id,
-        email: user.fields.email,
-        firstName: user.fields.firstName,
-        lastName: user.fields.lastName,
-        company: user.fields.company,
-        tier: user.fields.tier
-      }
+      user: userResponse
     });
 
   } catch (err) {
@@ -346,14 +352,18 @@ app.post('/reset-password', async (req, res) => {
 app.get('/profile', authenticateToken, async (req, res) => {
   try {
     const records = await userTable.find(req.user.id);
-    res.json({
+    console.log('Profile API - User ID:', req.user.id);
+    console.log('Profile API - User record:', records.fields);
+    const userData = {
       id: records.id,
       email: records.fields.email,
       firstName: records.fields.firstName,
       lastName: records.fields.lastName,
       company: records.fields.company,
       tier: records.fields.tier
-    });
+    };
+    console.log('Profile API - Returning user data:', userData);
+    res.json(userData);
   } catch (err) {
     console.error('Profile error:', err);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -396,6 +406,28 @@ app.post('/logout', authenticateToken, (req, res) => {
   // But we can log the action for security monitoring
   console.log('User logged out:', req.user.id);
   res.json({ message: 'Logged out successfully' });
+});
+
+// Debug endpoint to check for duplicate users
+app.get('/debug-users', async (req, res) => {
+  try {
+    const users = await userTable.select().firstPage();
+    console.log('All users in database:');
+    users.forEach((user, index) => {
+      console.log(`${index + 1}. ID: ${user.id}, Email: ${user.fields.email}, Name: ${user.fields.firstName} ${user.fields.lastName}`);
+    });
+    res.json(users.map(user => ({
+      id: user.id,
+      email: user.fields.email,
+      firstName: user.fields.firstName,
+      lastName: user.fields.lastName,
+      company: user.fields.company,
+      tier: user.fields.tier
+    })));
+  } catch (err) {
+    console.error('Debug users error:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 });
 
 app.get('/seed', async (req, res) => {
