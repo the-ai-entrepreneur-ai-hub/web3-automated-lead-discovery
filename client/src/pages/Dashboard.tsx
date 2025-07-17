@@ -174,7 +174,7 @@ const Dashboard = () => {
 
   const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
-  // Memoize expensive filtering operations
+  // Memoize expensive filtering and sorting operations
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
       const matchesSearch = (project["Project Name"] && project["Project Name"].toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -190,19 +190,32 @@ const Dashboard = () => {
             matchesCategory = daysSinceAdded <= 7;
             break;
           case "High Funding":
-            matchesCategory = project.Source === "CoinMarketCap" || project.Source === "CryptoRank";
+            matchesCategory = project["Lead Summary"] && project["Lead Summary"].value && 
+                            (project["Lead Summary"].value.toLowerCase().includes("funding") || 
+                             project["Lead Summary"].value.toLowerCase().includes("raised") ||
+                             project["Lead Summary"].value.toLowerCase().includes("investment"));
             break;
           case "Early Stage":
-            matchesCategory = project.Source === "ICO Drops" || daysSinceAdded <= 30;
+            matchesCategory = daysSinceAdded <= 30 || 
+                            (project["Lead Summary"] && project["Lead Summary"].value && 
+                             project["Lead Summary"].value.toLowerCase().includes("early"));
             break;
           case "Mainnet Live":
-            matchesCategory = project.Source === "CoinMarketCap" || project.Source === "DeFiLlama";
+            matchesCategory = project["Lead Summary"] && project["Lead Summary"].value && 
+                            (project["Lead Summary"].value.toLowerCase().includes("mainnet") || 
+                             project["Lead Summary"].value.toLowerCase().includes("live") ||
+                             project["Lead Summary"].value.toLowerCase().includes("launched"));
             break;
           case "Token Launch":
-            matchesCategory = project.Source === "ICO Drops" || project.Source === "CoinMarketCap";
+            matchesCategory = project["Lead Summary"] && project["Lead Summary"].value && 
+                            (project["Lead Summary"].value.toLowerCase().includes("token") || 
+                             project["Lead Summary"].value.toLowerCase().includes("launch") ||
+                             project["Lead Summary"].value.toLowerCase().includes("ico"));
             break;
           case "Hiring":
-            matchesCategory = project.Source === "CryptoRank" || project.LinkedIn;
+            matchesCategory = project.LinkedIn || 
+                            (project["Lead Summary"] && project["Lead Summary"].value && 
+                             project["Lead Summary"].value.toLowerCase().includes("hiring"));
             break;
           default:
             matchesCategory = true;
@@ -210,6 +223,11 @@ const Dashboard = () => {
       }
       
       return matchesSearch && matchesCategory;
+    }).sort((a, b) => {
+      // Sort by date added (most recent first)
+      const dateA = new Date(a["Date Added"]);
+      const dateB = new Date(b["Date Added"]);
+      return dateB.getTime() - dateA.getTime();
     });
   }, [projects, searchTerm, selectedCategory]);
 
@@ -349,7 +367,7 @@ const Dashboard = () => {
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20">
-                        {project.Source}
+                        Verified Lead
                       </Badge>
                       <span className="text-xs">• Added {project["Date Added"]}</span>
                     </div>

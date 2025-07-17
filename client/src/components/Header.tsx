@@ -8,7 +8,7 @@ import { User } from "@/lib/types";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
-  const [isDataSourcesOpen, setIsDataSourcesOpen] = useState(false);
+  const [isSuccessStoriesOpen, setIsSuccessStoriesOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
@@ -106,15 +106,15 @@ const Header = () => {
     },
     { name: "Who We Are", href: "#about" },
     { 
-      name: "Data Sources", 
+      name: "Success Stories", 
       href: "#", 
       dropdown: true,
       items: [
-        { name: "CryptoRank", href: "#", description: "Comprehensive crypto rankings" },
-        { name: "ICO Drops", href: "#", description: "Latest ICO and token launches" },
-        { name: "CoinMarketCap", href: "#", description: "Market cap and price data" },
-        { name: "DeFiLlama", href: "#", description: "DeFi protocol analytics" },
-        { name: "Dune Analytics", href: "#", description: "Blockchain data insights" }
+        { name: "Case Studies", href: "#", description: "Real success stories from our clients" },
+        { name: "ROI Calculator", href: "#", description: "Calculate your potential returns" },
+        { name: "Best Practices", href: "#", description: "Tips for maximizing lead conversion" },
+        { name: "Community", href: "#", description: "Join our Web3 professionals network" },
+        { name: "Resources", href: "#", description: "Tools and guides for Web3 growth" }
       ]
     }
   ];
@@ -148,11 +148,11 @@ const Header = () => {
                     className="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
                     onMouseEnter={() => {
                       if (item.name === "Our Services") setIsServicesOpen(true);
-                      if (item.name === "Data Sources") setIsDataSourcesOpen(true);
+                      if (item.name === "Success Stories") setIsSuccessStoriesOpen(true);
                     }}
                     onMouseLeave={() => {
                       if (item.name === "Our Services") setIsServicesOpen(false);
-                      if (item.name === "Data Sources") setIsDataSourcesOpen(false);
+                      if (item.name === "Success Stories") setIsSuccessStoriesOpen(false);
                     }}
                   >
                     {item.name}
@@ -172,15 +172,15 @@ const Header = () => {
                   <div 
                     className={`absolute top-full left-0 mt-1 w-64 bg-card/95 backdrop-blur-lg rounded-lg shadow-lg border border-border/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ${
                       (item.name === "Our Services" && isServicesOpen) || 
-                      (item.name === "Data Sources" && isDataSourcesOpen) ? 'opacity-100 visible' : ''
+                      (item.name === "Success Stories" && isSuccessStoriesOpen) ? 'opacity-100 visible' : ''
                     }`}
                     onMouseEnter={() => {
                       if (item.name === "Our Services") setIsServicesOpen(true);
-                      if (item.name === "Data Sources") setIsDataSourcesOpen(true);
+                      if (item.name === "Success Stories") setIsSuccessStoriesOpen(true);
                     }}
                     onMouseLeave={() => {
                       if (item.name === "Our Services") setIsServicesOpen(false);
-                      if (item.name === "Data Sources") setIsDataSourcesOpen(false);
+                      if (item.name === "Success Stories") setIsSuccessStoriesOpen(false);
                     }}
                   >
                     {item.items.map((subItem) => (
@@ -299,17 +299,17 @@ const Header = () => {
                         className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
                         onClick={() => {
                           if (item.name === "Our Services") setIsServicesOpen(!isServicesOpen);
-                          if (item.name === "Data Sources") setIsDataSourcesOpen(!isDataSourcesOpen);
+                          if (item.name === "Success Stories") setIsSuccessStoriesOpen(!isSuccessStoriesOpen);
                         }}
                       >
                         {item.name}
                         <ChevronDown className={`h-4 w-4 transition-transform ${
                           (item.name === "Our Services" && isServicesOpen) || 
-                          (item.name === "Data Sources" && isDataSourcesOpen) ? 'rotate-180' : ''
+                          (item.name === "Success Stories" && isSuccessStoriesOpen) ? 'rotate-180' : ''
                         }`} />
                       </button>
                       {((item.name === "Our Services" && isServicesOpen) || 
-                        (item.name === "Data Sources" && isDataSourcesOpen)) && 
+                        (item.name === "Success Stories" && isSuccessStoriesOpen)) && 
                         item.items && (
                         <div className="pl-4 space-y-1">
                           {item.items.map((subItem) => (
@@ -344,7 +344,10 @@ const Header = () => {
                       <div className="font-medium text-foreground">
                         {user.firstName} {user.lastName}
                       </div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                      <div className="text-xs text-muted-foreground">{user.company}</div>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="capitalize">{user.tier}</span> plan
+                      </div>
                     </div>
                     {!isDashboard && (
                       <Button
