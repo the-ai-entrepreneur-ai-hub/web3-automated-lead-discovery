@@ -1,6 +1,163 @@
-
-> web3-prospector-server@1.0.0 start
-> node src/index.js
-
-[dotenv@17.2.0] injecting env (8) from .env (tip: ⚙️  suppress all logs with { quiet: true })
+[dotenv@17.2.0] injecting env (11) from .env (tip: ⚙️  suppress all logs with { quiet: true })
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  override existing env vars with { override: true })
+Cleaning up expired verification codes...
 Server listening at http://localhost:3006
+No expired verification codes found
+Attempting to send verification email to: georgekioko9948@gmail.com
+Sending verification email via Resend to: georgekioko9948@gmail.com
+From: Web3Radar <noreply@rawfreedomai.com>
+Using API key: Present
+Verification email sent successfully via Resend
+Full Resend response: {
+  "data": {
+    "id": "75551423-bcea-4952-ae21-adcde95beceb"
+  },
+  "error": null
+}
+Verification email sent successfully
+Verification data stored in Airtable for georgekioko9948@gmail.com
+Airtable record ID: rec2anoKsPQN7stAl
+Verification code sent to georgekioko9948@gmail.com
+Verification data stored: {
+  email: 'georgekioko9948@gmail.com',
+  verificationCode: '798229',
+  verificationCodeType: 'string',
+  expiryTime: 2025-07-17T18:39:01.583Z,
+  storage: 'Airtable'
+}
+Verification attempt from Airtable: {
+  email: 'georgekioko9948@gmail.com',
+  receivedCode: '798229',
+  storedCode: '798229',
+  match: true
+}
+Email verified and account created for georgekioko9948@gmail.com
+Login attempt received
+Login successful for user: georgekioko9948@gmail.com
+Login - User ID: rec2anoKsPQN7stAl
+Login - Full user record: {
+  email: 'georgekioko9948@gmail.com',
+  password: '$2b$10$uNdX7OI334DxQFVoDl7N0.RABOMlCdm5XBbWDKr58PRT2BjIPHkwG',
+  tier: 'free',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'Test Company',
+  isVerified: true
+}
+Login - Returning user data: {
+  id: 'rec2anoKsPQN7stAl',
+  email: 'georgekioko9948@gmail.com',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'Test Company',
+  tier: 'free'
+}
+Attempting to send verification email to: christopherolah.co.dev@gmail.com
+Sending verification email via Resend to: christopherolah.co.dev@gmail.com
+From: Web3Radar <noreply@rawfreedomai.com>
+Using API key: Present
+Verification email sent successfully via Resend
+Full Resend response: {
+  "data": {
+    "id": "8dbca5a7-a201-45e2-a84d-a957cc36041e"
+  },
+  "error": null
+}
+Verification email sent successfully
+Verification data stored in Airtable for christopherolah.co.dev@gmail.com
+Airtable record ID: recmw1qLLsQoNoHQz
+Verification code sent to christopherolah.co.dev@gmail.com
+Verification data stored: {
+  email: 'christopherolah.co.dev@gmail.com',
+  verificationCode: '250078',
+  verificationCodeType: 'string',
+  expiryTime: 2025-07-17T18:47:57.262Z,
+  storage: 'Airtable'
+}
+Verification attempt from Airtable: {
+  email: 'christopherolah.co.dev@gmail.com',
+  receivedCode: '250078',
+  storedCode: '250078',
+  match: true
+}
+Email verified and account created for christopherolah.co.dev@gmail.com
+Successfully fetched 178 projects from Airtable
+Profile API - User ID: recmw1qLLsQoNoHQz
+Profile API - User record: {
+  email: 'christopherolah.co.dev@gmail.com',
+  password: '$2b$10$r9m8FBdLqr//Y87s/cvWX.YXElpjzGcZhI9fAFG12Va01Ip9FhCpS',
+  tier: 'free',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  isVerified: true
+}
+Profile API - Returning user data: {
+  id: 'recmw1qLLsQoNoHQz',
+  email: 'christopherolah.co.dev@gmail.com',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  tier: 'free'
+}
+Profile API - User ID: recmw1qLLsQoNoHQz
+Profile API - User record: {
+  email: 'christopherolah.co.dev@gmail.com',
+  password: '$2b$10$r9m8FBdLqr//Y87s/cvWX.YXElpjzGcZhI9fAFG12Va01Ip9FhCpS',
+  tier: 'free',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  isVerified: true
+}
+Profile API - Returning user data: {
+  id: 'recmw1qLLsQoNoHQz',
+  email: 'christopherolah.co.dev@gmail.com',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  tier: 'free'
+}
+Profile API - User ID: recmw1qLLsQoNoHQz
+Profile API - User record: {
+  email: 'christopherolah.co.dev@gmail.com',
+  password: '$2b$10$r9m8FBdLqr//Y87s/cvWX.YXElpjzGcZhI9fAFG12Va01Ip9FhCpS',
+  tier: 'free',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  isVerified: true
+}
+Profile API - Returning user data: {
+  id: 'recmw1qLLsQoNoHQz',
+  email: 'christopherolah.co.dev@gmail.com',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  tier: 'free'
+}
+Profile API - User ID: recmw1qLLsQoNoHQz
+Profile API - User record: {
+  email: 'christopherolah.co.dev@gmail.com',
+  password: '$2b$10$r9m8FBdLqr//Y87s/cvWX.YXElpjzGcZhI9fAFG12Va01Ip9FhCpS',
+  tier: 'free',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  isVerified: true
+}
+Profile API - Returning user data: {
+  id: 'recmw1qLLsQoNoHQz',
+  email: 'christopherolah.co.dev@gmail.com',
+  firstName: 'George',
+  lastName: 'Kioko',
+  company: 'George Kioko',
+  tier: 'free'
+}
+Successfully fetched 178 projects from Airtable
+Cleaning up expired verification codes...
+No expired verification codes found
+Cleaning up expired verification codes...
+No expired verification codes found
+Cleaning up expired verification codes...
+No expired verification codes found
