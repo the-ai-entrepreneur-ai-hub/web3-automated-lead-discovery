@@ -1,6 +1,6 @@
 [build]
   # Build command
-  command = "cd client && npm install && npm run build"
+  command = "cd client && npm ci --include=dev && npm run build"
   
   # Directory to publish (relative to root of your repo)
   publish = "client/dist"
