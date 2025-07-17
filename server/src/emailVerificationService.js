@@ -202,15 +202,24 @@ const sendVerificationEmail = async (userEmail, verificationCode) => {
     
     const emailData = {
       from: process.env.FROM_EMAIL || 'Web3Radar <support@rawfreedomai.com>',
-      to: userEmail,
+      to: [userEmail],
       subject: template.subject,
       html: template.html,
     };
 
+    console.log('Sending verification email via Resend to:', userEmail);
+    console.log('From:', emailData.from);
+    console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
+
     const result = await resend.emails.send(emailData);
     
     console.log('Verification email sent successfully via Resend');
-    console.log('Email ID:', result.data?.id);
+    console.log('Full Resend response:', JSON.stringify(result, null, 2));
+    
+    if (result.error) {
+      console.error('Resend API error:', result.error);
+      throw new Error(`Resend API error: ${result.error.message}`);
+    }
     
     return {
       success: true,
@@ -279,12 +288,23 @@ const sendEmailVerification = async (userEmail) => {
   try {
     // Try Resend first
     if (process.env.RESEND_API_KEY) {
-      const result = await sendVerificationEmail(userEmail, verificationCode);
-      return {
-        ...result,
-        verificationCode,
-        expiryTime
-      };
+      try {
+        const result = await sendVerificationEmail(userEmail, verificationCode);
+        return {
+          ...result,
+          verificationCode,
+          expiryTime
+        };
+      } catch (resendError) {
+        console.log('Resend failed, falling back to test email:', resendError.message);
+        // Fallback to test email if Resend fails
+        const result = await sendVerificationEmailFallback(userEmail, verificationCode);
+        return {
+          ...result,
+          verificationCode,
+          expiryTime
+        };
+      }
     } else {
       // Fallback to test email
       const result = await sendVerificationEmailFallback(userEmail, verificationCode);

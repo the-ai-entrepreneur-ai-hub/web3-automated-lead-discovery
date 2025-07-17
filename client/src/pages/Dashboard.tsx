@@ -131,57 +131,77 @@ const Dashboard = () => {
   }, [fetchData]);
 
 
-  const handleExport = () => {
-    if (projects.length === 0) {
-      return;
-    }
-    
-    let csvContent;
-    let filename;
+  const handleExport = async () => {
     const now = new Date();
     const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const timestamp = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
     
     if (user?.tier === 'paid') {
-      // Premium users: Export project name, website, and socials (only if they exist)
-      const headers = ["Project Name", "Website", "Twitter", "LinkedIn", "Telegram"];
-      
-      // Filter projects that have at least one social media link
-      const projectsWithSocials = projects.filter(p => 
-        p.Twitter || p.LinkedIn || p.Telegram
-      );
-      
-      csvContent = "data:text/csv;charset=utf-8,"
-        + headers.join(",") + "\n"
-        + projectsWithSocials.map(p => {
-          const row = [
-            `"${p["Project Name"] || ''}"`,
-            `"${p.Website || ''}"`,
-            `"${p.Twitter || ''}"`,
-            `"${p.LinkedIn || ''}"`,
-            `"${p.Telegram || ''}"`
-          ];
-          return row.join(",");
-        }).join("\n");
-      
-      filename = `web3-project-leads-with-socials-${date}&${timestamp}.csv`;
+      // Premium users: Fetch all projects with social media from server
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/export-premium`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch export data');
+        }
+
+        const exportData = await response.json();
+        console.log(`Exporting ${exportData.withSocials} projects out of ${exportData.total} total`);
+
+        const headers = ["Project Name", "Website", "Twitter", "LinkedIn", "Telegram"];
+        const csvContent = "data:text/csv;charset=utf-8,"
+          + headers.join(",") + "\n"
+          + exportData.data.map(p => {
+            const row = [
+              `"${p["Project Name"] || ''}"`,
+              `"${p.Website || ''}"`,
+              `"${p.Twitter || ''}"`,
+              `"${p.LinkedIn || ''}"`,
+              `"${p.Telegram || ''}"`
+            ];
+            return row.join(",");
+          }).join("\n");
+        
+        const filename = `web3-project-leads-with-socials-${date}&${timestamp}.csv`;
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export data. Please try again.');
+      }
     } else {
       // Free users: Limited data (50 leads, project name and website only)
+      if (projects.length === 0) {
+        return;
+      }
+      
       const limitedProjects = projects.slice(0, 50);
       const headers = ["Project Name", "Website"];
-      csvContent = "data:text/csv;charset=utf-8,"
+      const csvContent = "data:text/csv;charset=utf-8,"
         + headers.join(",") + "\n"
         + limitedProjects.map(p => `"${p["Project Name"]}","${p.Website}"`).join("\n");
-      filename = `web3-project-leads-sample-${date}&${timestamp}.csv`;
+      const filename = `web3-project-leads-sample-${date}&${timestamp}.csv`;
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleLoadMore = () => {
