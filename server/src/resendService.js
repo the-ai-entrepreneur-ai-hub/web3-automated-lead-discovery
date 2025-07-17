@@ -1,15 +1,18 @@
 const { Resend } = require('resend');
 const { passwordResetTemplate } = require('./emailTemplates');
 
-// Initialize Resend only if API key is available
-let resend = null;
-if (process.env.RESEND_API_KEY) {
-  resend = new Resend(process.env.RESEND_API_KEY);
-}
+// Initialize Resend dynamically
+const getResendClient = () => {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+};
 
 // Send password reset email using Resend
 const sendPasswordResetEmail = async (userEmail, resetToken) => {
   try {
+    const resend = getResendClient();
     if (!resend) {
       throw new Error('RESEND_API_KEY not configured');
     }
@@ -43,6 +46,7 @@ const sendPasswordResetEmail = async (userEmail, resetToken) => {
 // Test email configuration
 const testEmailConfig = async () => {
   try {
+    const resend = getResendClient();
     if (!resend) {
       throw new Error('RESEND_API_KEY not configured');
     }
