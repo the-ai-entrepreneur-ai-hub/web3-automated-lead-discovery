@@ -11,7 +11,7 @@ const { stripe, STRIPE_CONFIG } = require('./stripe');
 require('dotenv').config();
 
 const app = express();
-const port = 3006;
+const port = process.env.PORT || 3006;
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_TOKEN }).base('app32Pwdg1yJPDRA7');
 const userTable = base('Users');
@@ -41,7 +41,7 @@ app.use(compression()); // Compress responses
 
 // Configure CORS to allow credentials
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io', 'https://web3-automated-lead-discovery.netlify.app'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io', 'https://web3-automated-lead-discovery.netlify.app', 'https://web3-prospector.netlify.app'],
   credentials: true
 }));
 
