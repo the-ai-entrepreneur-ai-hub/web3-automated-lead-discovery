@@ -6,37 +6,37 @@ const Features = () => {
       title: "24/7 Automated Discovery",
       description: "Our AI continuously scans blockchain networks, social media, and news sources to identify new Web3 projects as they launch.",
       icon: "🚀",
-      image: "/lovable-uploads/e32f88c6-95cd-477e-a3c7-135bd8195930.png"
+      image: "./lovable-uploads/e32f88c6-95cd-477e-a3c7-135bd8195930.png"
     },
     {
       title: "Complete Contact Database",
       description: "Automatically extract email addresses, social media profiles, and key personnel information for immediate outreach.",
       icon: "📊",
-      image: "/lovable-uploads/4ab4d2bb-7213-4b49-8f09-cb1ae96595fe.png"
+      image: "./lovable-uploads/4ab4d2bb-7213-4b49-8f09-cb1ae96595fe.png"
     },
     {
       title: "Real-time Data Updates",
       description: "Stay ahead of the competition with continuously updated project information and funding announcements.",
       icon: "⚡",
-      image: "/lovable-uploads/39661301-d71f-4dc7-9970-c1f08082b338.png"
+      image: "./lovable-uploads/39661301-d71f-4dc7-9970-c1f08082b338.png"
     },
     {
       title: "Advanced Filtering",
       description: "Find exactly what you're looking for with powerful search and filtering options by industry, funding stage, and more.",
       icon: "🔍",
-      image: "/lovable-uploads/0d560163-3c3f-4d9e-8e8e-0ae7f2bf117d.png"
+      image: "./lovable-uploads/0d560163-3c3f-4d9e-8e8e-0ae7f2bf117d.png"
     },
     {
       title: "Export & Integration",
       description: "Export data to CSV or integrate directly with your existing CRM and outreach tools.",
       icon: "📈",
-      image: "/lovable-uploads/8c3f1f57-bfd1-4d77-aa25-8518722c3878.png"
+      image: "./lovable-uploads/8c3f1f57-bfd1-4d77-aa25-8518722c3878.png"
     },
     {
       title: "Quality Verification",
       description: "All data is verified and cleaned to ensure you're reaching out to legitimate projects with accurate information.",
       icon: "✅",
-      image: "/lovable-uploads/171c74a3-9894-44e5-a9ee-4107954d54f1.png"
+      image: "./lovable-uploads/171c74a3-9894-44e5-a9ee-4107954d54f1.png"
     }
   ];
 

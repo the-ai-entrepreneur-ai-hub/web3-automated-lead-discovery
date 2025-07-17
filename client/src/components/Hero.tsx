@@ -9,9 +9,9 @@ const Hero = () => {
     <section className="min-h-screen flex items-center justify-center hero-bg network-bg relative overflow-hidden">
       {/* Hero Background Image */}
       <div className="absolute inset-0 flex items-center justify-center opacity-20">
-        <img 
-          src="/lovable-uploads/398ca217-7313-49b0-a990-12400b5781dc.png" 
-          alt="Web3 Radar Visualization" 
+        <img
+          src="./lovable-uploads/398ca217-7313-49b0-a990-12400b5781dc.png"
+          alt="Web3 Radar Visualization"
           className="w-full h-full object-contain max-w-4xl"
         />
       </div>
