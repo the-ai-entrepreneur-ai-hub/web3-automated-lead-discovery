@@ -22,7 +22,13 @@
       "Bash(gh auth:*)",
       "Bash(git config:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(cmd.exe /c \"git push origin master\")",
+      "Bash(find:*)",
+      "Bash(timeout:*)",
+      "Bash(kill:*)",
+      "Bash(time curl:*)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }

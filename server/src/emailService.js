@@ -8,7 +8,7 @@ const createTransporter = () => {
   
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     // Gmail configuration
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
@@ -17,7 +17,7 @@ const createTransporter = () => {
     });
   } else if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     // Generic SMTP configuration
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       secure: process.env.SMTP_SECURE === 'true',
@@ -29,7 +29,7 @@ const createTransporter = () => {
   } else {
     // For development/testing - use Ethereal Email (fake SMTP)
     console.log('No email configuration found. Using test account...');
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,
@@ -49,7 +49,7 @@ const createTestAccount = async () => {
     console.log('User:', testAccount.user);
     console.log('Pass:', testAccount.pass);
     
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,

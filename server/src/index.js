@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
+const compression = require('compression');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 require('dotenv').config();
 
@@ -13,12 +14,35 @@ const port = 3006;
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_TOKEN }).base('app32Pwdg1yJPDRA7');
 const userTable = base('Users');
 
+// Simple in-memory cache for projects (5 minutes TTL)
+let projectsCache = {
+  data: null,
+  timestamp: null,
+  ttl: 5 * 60 * 1000 // 5 minutes
+};
+
+const getCachedProjects = () => {
+  if (projectsCache.data && projectsCache.timestamp && 
+      (Date.now() - projectsCache.timestamp) < projectsCache.ttl) {
+    return projectsCache.data;
+  }
+  return null;
+};
+
+const setCachedProjects = (data) => {
+  projectsCache.data = data;
+  projectsCache.timestamp = Date.now();
+};
+
+// Performance optimizations
+app.use(compression()); // Compress responses
+app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
+
 // Configure CORS to allow credentials
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io'],
   credentials: true
 }));
-app.use(express.json());
 
 // Auth middleware
 const authenticateToken = (req, res, next) => {
@@ -337,6 +361,13 @@ app.get('/profile', authenticateToken, async (req, res) => {
 });
 
 app.get('/projects', authenticateToken, (req, res) => {
+  // Check cache first
+  const cachedProjects = getCachedProjects();
+  if (cachedProjects) {
+    console.log('Returning cached projects');
+    return res.json(cachedProjects);
+  }
+
   const projects = [];
   base('Leads').select({
     view: "Grid view"
@@ -351,6 +382,10 @@ app.get('/projects', authenticateToken, (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch projects from Airtable' });
     }
     console.log(`Successfully fetched ${projects.length} projects from Airtable`);
+    
+    // Cache the results
+    setCachedProjects(projects);
+    
     res.json(projects);
   });
 });
