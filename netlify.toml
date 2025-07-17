@@ -41,7 +41,7 @@
 # API redirects to your backend server
 [[redirects]]
   from = "/api/*"
-  to = "https://your-backend-url.com/api/:splat"
+  to = "https://web3-prospector-backend.herokuapp.com/:splat"
   status = 200
   force = true
 
