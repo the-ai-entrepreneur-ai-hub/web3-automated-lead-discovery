@@ -28,6 +28,12 @@ const Header = () => {
           if (response.ok) {
             const data = await response.json();
             console.log('Header - Profile API response:', data);
+            
+            // Ensure email is always a string, not an array
+            if (data.email && Array.isArray(data.email)) {
+              data.email = data.email[0];
+            }
+            
             setUser(data);
             // Update localStorage with fresh data from server
             localStorage.setItem("user", JSON.stringify(data));
@@ -51,6 +57,8 @@ const Header = () => {
       }
     };
 
+    // Clear any potentially corrupted localStorage data
+    localStorage.removeItem("user");
     fetchUser();
   }, []);
 
@@ -239,7 +247,7 @@ const Header = () => {
                           {user.firstName} {user.lastName}
                         </div>
                         <div className="text-sm text-muted-foreground break-words mt-1">
-                          Email: {user.email}
+                          Email: {Array.isArray(user.email) ? user.email[0] : user.email}
                         </div>
                         <div className="text-xs text-muted-foreground mt-2 break-words">
                           {user.company}
