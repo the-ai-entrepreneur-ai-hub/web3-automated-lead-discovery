@@ -9,9 +9,14 @@ import { Link } from "react-router-dom";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
         method: 'POST',
@@ -28,11 +33,13 @@ const Login = () => {
         window.location.href = "/dashboard";
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Login failed');
+        setError(errorData.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('An error occurred during login.');
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,6 +70,11 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-2 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">Email</Label>
                 <Input
@@ -72,6 +84,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -84,20 +97,21 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 text-sm">
-                  <input type="checkbox" className="rounded border-border" />
+                  <input type="checkbox" className="rounded border-border" disabled={isLoading} />
                   <span className="text-muted-foreground">Remember me</span>
                 </label>
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
-              <Button type="submit" className="w-full btn-web3" size="lg">
-                Sign In
+              <Button type="submit" className="w-full btn-web3" size="lg" disabled={isLoading}>
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 

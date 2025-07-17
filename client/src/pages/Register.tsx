@@ -15,11 +15,23 @@ const Register = () => {
     password: "",
     confirmPassword: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long!");
+      setIsLoading(false);
       return;
     }
 
@@ -40,21 +52,22 @@ const Register = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // Store token and user data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.location.href = "/dashboard";
       } else {
         const errorData = await response.json();
         if (errorData.error === 'Email already registered') {
-          alert('This email is already registered. Please use a different email or sign in.');
+          setError('This email is already registered. Please use a different email or sign in.');
         } else {
-          alert(errorData.error || 'Registration failed');
+          setError(errorData.error || 'Registration failed');
         }
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('An error occurred during registration.');
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -92,6 +105,11 @@ const Register = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-2 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName" className="text-foreground">First Name</Label>
@@ -102,6 +120,7 @@ const Register = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                     className="bg-secondary border-border"
                   />
                 </div>
@@ -114,6 +133,7 @@ const Register = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                     className="bg-secondary border-border"
                   />
                 </div>
@@ -128,6 +148,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -140,6 +161,7 @@ const Register = () => {
                   value={formData.company}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -153,6 +175,7 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -166,11 +189,12 @@ const Register = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   className="bg-secondary border-border"
                 />
               </div>
               <div className="flex items-start space-x-2">
-                <input type="checkbox" required className="mt-1 rounded border-border" />
+                <input type="checkbox" required disabled={isLoading} className="mt-1 rounded border-border" />
                 <span className="text-sm text-muted-foreground">
                   I agree to the{" "}
                   <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
@@ -178,8 +202,8 @@ const Register = () => {
                   <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </span>
               </div>
-              <Button type="submit" className="w-full btn-web3" size="lg">
-                Create Account
+              <Button type="submit" className="w-full btn-web3" size="lg" disabled={isLoading}>
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 

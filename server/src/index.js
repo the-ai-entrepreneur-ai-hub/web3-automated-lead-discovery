@@ -14,10 +14,28 @@ const userTable = base('Users');
 
 // Configure CORS to allow credentials
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io'],
   credentials: true
 }));
 app.use(express.json());
+
+// Auth middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret', (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
 
 app.get('/', (req, res) => {
   res.send('Hello from the Web3 Prospector server!');
@@ -91,6 +109,17 @@ app.post('/login', async (req, res) => {
   console.log('Login attempt received');
   const { email, password } = req.body;
 
+  // Validate input
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   try {
     const records = await userTable.select({
       filterByFormula: `{email} = "${email}"`
@@ -110,6 +139,8 @@ app.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+    
+    console.log('Login successful for user:', user.fields.email);
     res.json({ 
       token,
       user: {
@@ -262,16 +293,9 @@ app.post('/reset-password', async (req, res) => {
   }
 });
 
-app.get('/profile', async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+app.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
-    const records = await userTable.find(decoded.id);
+    const records = await userTable.find(req.user.id);
     res.json({
       id: records.id,
       email: records.fields.email,
@@ -281,11 +305,12 @@ app.get('/profile', async (req, res) => {
       tier: records.fields.tier
     });
   } catch (err) {
-    res.status(401).json({ error: 'Unauthorized' });
+    console.error('Profile error:', err);
+    res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
-app.get('/projects', (req, res) => {
+app.get('/projects', authenticateToken, (req, res) => {
   const projects = [];
   base('Leads').select({
     view: "Grid view"
@@ -302,6 +327,14 @@ app.get('/projects', (req, res) => {
     console.log(`Successfully fetched ${projects.length} projects from Airtable`);
     res.json(projects);
   });
+});
+
+// Logout endpoint (mainly for server-side token invalidation if needed)
+app.post('/logout', authenticateToken, (req, res) => {
+  // In a stateless JWT setup, logout is typically handled client-side
+  // But we can log the action for security monitoring
+  console.log('User logged out:', req.user.id);
+  res.json({ message: 'Logged out successfully' });
 });
 
 app.get('/seed', async (req, res) => {

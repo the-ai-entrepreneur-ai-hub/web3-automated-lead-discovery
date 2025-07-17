@@ -41,10 +41,26 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/projects`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/projects`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (response.ok) {
           const data = await response.json();
           setProjects(data);
+        } else if (response.status === 401 || response.status === 403) {
+          // Token is invalid
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
         } else {
           console.error('Failed to fetch projects');
         }
@@ -56,14 +72,25 @@ const Dashboard = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+        
         if (response.ok) {
           const data = await response.json();
           setUser(data);
+        } else if (response.status === 401 || response.status === 403) {
+          // Token is invalid
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
         } else {
           console.error('Failed to fetch user');
         }
@@ -74,7 +101,7 @@ const Dashboard = () => {
 
     fetchProjects();
     fetchUser();
-  }, []);
+  }, [navigate]);
 
 
   const handleExport = () => {
