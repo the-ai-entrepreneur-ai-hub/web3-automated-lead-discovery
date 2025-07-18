@@ -165,3 +165,35 @@ Cleaning up expired verification codes...
 No expired verification codes found
 Cleaning up expired verification codes...
 No expired verification codes found
+Cleaning up expired verification codes...
+No expired verification codes found
+Cleaning up expired verification codes...
+Error cleaning up expired verification codes: FetchError: request to https://api.airtable.com/v0/app32Pwdg1yJPDRA7/Users?filterByFormula=AND(%7BverificationCode%7D+!%3D+%22%22%2C+%7BisVerified%7D+%3D+FALSE()%2C+%7BverificationCodeExpiry%7D+%3C+%222025-07-18T03%3A24%3A38.632Z%22) failed, reason: getaddrinfo EAI_AGAIN api.airtable.com
+    at ClientRequest.<anonymous> (/mnt/c/Users/Administrator/Desktop/web3-prospector/server/node_modules/node-fetch/lib/index.js:1501:11)
+    at ClientRequest.emit (node:events:518:28)
+    at emitErrorEvent (node:_http_client:104:11)
+    at TLSSocket.socketErrorListener (node:_http_client:518:5)
+    at TLSSocket.emit (node:events:518:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  type: 'system',
+  errno: 'EAI_AGAIN',
+  code: 'EAI_AGAIN'
+}
+Cleaning up expired verification codes...
+Error cleaning up expired verification codes: FetchError: request to https://api.airtable.com/v0/app32Pwdg1yJPDRA7/Users?filterByFormula=AND(%7BverificationCode%7D+!%3D+%22%22%2C+%7BisVerified%7D+%3D+FALSE()%2C+%7BverificationCodeExpiry%7D+%3C+%222025-07-18T03%3A54%3A38.655Z%22) failed, reason: getaddrinfo EAI_AGAIN api.airtable.com
+    at ClientRequest.<anonymous> (/mnt/c/Users/Administrator/Desktop/web3-prospector/server/node_modules/node-fetch/lib/index.js:1501:11)
+    at ClientRequest.emit (node:events:518:28)
+    at emitErrorEvent (node:_http_client:104:11)
+    at TLSSocket.socketErrorListener (node:_http_client:518:5)
+    at TLSSocket.emit (node:events:518:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  type: 'system',
+  errno: 'EAI_AGAIN',
+  code: 'EAI_AGAIN'
+}
+Cleaning up expired verification codes...
+No expired verification codes found
