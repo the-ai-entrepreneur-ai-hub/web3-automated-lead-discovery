@@ -128,10 +128,9 @@ const generatePaymentReceiptEmail = (userDetails, paymentDetails, subscriptionDe
         }
         
         .receipt-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
+            display: table;
+            width: 100%;
+            padding: 12px 0;
             border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         }
         
@@ -140,15 +139,23 @@ const generatePaymentReceiptEmail = (userDetails, paymentDetails, subscriptionDe
         }
         
         .receipt-label {
+            display: table-cell;
+            width: 40%;
             font-size: 14px;
             color: #94a3b8;
             font-weight: 500;
+            vertical-align: middle;
+            padding-right: 16px;
         }
         
         .receipt-value {
+            display: table-cell;
+            width: 60%;
             font-size: 14px;
             color: #e2e8f0;
             font-weight: 600;
+            text-align: right;
+            vertical-align: middle;
         }
         
         .amount {
@@ -254,6 +261,24 @@ const generatePaymentReceiptEmail = (userDetails, paymentDetails, subscriptionDe
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
+            }
+            
+            .receipt-row {
+                display: block;
+                padding: 8px 0;
+            }
+            
+            .receipt-label {
+                display: block;
+                width: 100%;
+                margin-bottom: 4px;
+                padding-right: 0;
+            }
+            
+            .receipt-value {
+                display: block;
+                width: 100%;
+                text-align: left;
             }
         }
     </style>
