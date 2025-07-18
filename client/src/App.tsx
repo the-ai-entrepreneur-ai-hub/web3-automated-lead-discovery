@@ -28,6 +28,14 @@ const PageLoader = () => (
 );
 
 function App() {
+  // Debug: Log environment variables on app load
+  console.log('Environment Debug:', {
+    API_URL: import.meta.env.VITE_API_URL,
+    NODE_ENV: import.meta.env.NODE_ENV,
+    DEV: import.meta.env.DEV,
+    PROD: import.meta.env.PROD
+  });
+
   return (
     <Router>
       <Suspense fallback={<PageLoader />}>
