@@ -21,7 +21,7 @@ const DemoSection = () => {
       email: "contact@auroraswap.example",
       twitter: "https://twitter.com/auroraswap",
       linkedin: "https://linkedin.com/company/auroraswap",
-      dateAdded: "2024-01-15",
+      dateAdded: "2025-01-15",
       funding: "$2.5M",
       category: "DeFi"
     },
@@ -35,7 +35,7 @@ const DemoSection = () => {
       email: "hello@metavault.example",
       twitter: "https://twitter.com/metavault",
       linkedin: "https://linkedin.com/company/metavault",
-      dateAdded: "2024-01-12",
+      dateAdded: "2025-01-12",
       funding: "$5.2M",
       category: "Asset Management"
     },
@@ -49,7 +49,7 @@ const DemoSection = () => {
       email: "team@chainbridge.example",
       twitter: "https://twitter.com/chainbridge",
       linkedin: "https://linkedin.com/company/chainbridge",
-      dateAdded: "2024-01-10",
+      dateAdded: "2025-01-10",
       funding: "$8.7M",
       category: "Infrastructure"
     },
@@ -63,7 +63,7 @@ const DemoSection = () => {
       email: "info@tokenflow.example",
       twitter: "https://twitter.com/tokenflow",
       linkedin: "https://linkedin.com/company/tokenflow",
-      dateAdded: "2024-01-08",
+      dateAdded: "2025-01-08"
       funding: "$3.1M",
       category: "Analytics"
     }

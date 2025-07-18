@@ -108,10 +108,10 @@ const Header = () => {
       href: "#", 
       dropdown: true,
       items: [
-        { name: "Lead Discovery", href: "/dashboard", description: "AI-powered Web3 lead generation" },
-        { name: "Market Intelligence", href: "#", description: "Real-time market insights" },
-        { name: "Competitor Analysis", href: "#", description: "Track your competition" },
-        { name: "Contact Enrichment", href: "#", description: "Enhanced contact information" }
+        { name: "Lead Discovery", href: "/services#lead-discovery", description: "AI-powered Web3 lead generation" },
+        { name: "Market Intelligence", href: "/services#market-intelligence", description: "Real-time market insights" },
+        { name: "Competitor Analysis", href: "/services#competitor-analysis", description: "Track your competition" },
+        { name: "Contact Enrichment", href: "/services#contact-enrichment", description: "Enhanced contact information" }
       ]
     },
     { name: "Who We Are", href: "#about" },
