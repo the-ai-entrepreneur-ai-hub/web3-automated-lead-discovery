@@ -120,11 +120,9 @@ const Header = () => {
       href: "#", 
       dropdown: true,
       items: [
-        { name: "Case Studies", href: "#", description: "Real success stories from our clients" },
-        { name: "ROI Calculator", href: "#", description: "Calculate your potential returns" },
-        { name: "Best Practices", href: "#", description: "Tips for maximizing lead conversion" },
-        { name: "Community", href: "#", description: "Join our Web3 professionals network" },
-        { name: "Resources", href: "#", description: "Tools and guides for Web3 growth" }
+        { name: "Case Studies", href: "/case-studies", description: "Real success stories from our clients" },
+        { name: "Best Practices", href: "/best-practices", description: "Tips for maximizing lead conversion" },
+        { name: "Community", href: "/community", description: "Join our Web3 professionals network" }
       ]
     }
   ];

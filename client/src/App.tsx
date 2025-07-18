@@ -13,6 +13,9 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Settings = lazy(() => import("./pages/Settings"));
+const CaseStudies = lazy(() => import("./pages/CaseStudies"));
+const BestPractices = lazy(() => import("./pages/BestPractices"));
+const Community = lazy(() => import("./pages/Community"));
 
 // Loading component
 const PageLoader = () => (
@@ -50,6 +53,9 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/case-studies" element={<CaseStudies />} />
+          <Route path="/best-practices" element={<BestPractices />} />
+          <Route path="/community" element={<Community />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
