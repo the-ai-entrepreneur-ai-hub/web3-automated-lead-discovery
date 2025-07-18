@@ -73,7 +73,8 @@ const Register = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      console.log('API URL:', import.meta.env.VITE_API_URL);
+      console.log('API URL being used:', config.API_URL);
+      console.log('Full fetch URL:', `${config.API_URL}/register`);
       setError('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
