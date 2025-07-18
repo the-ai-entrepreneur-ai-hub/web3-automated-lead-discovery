@@ -20,6 +20,10 @@ const LeadGenerationStrategies = lazy(() => import("./pages/articles/LeadGenerat
 const CommunityBuilding = lazy(() => import("./pages/articles/CommunityBuilding"));
 const Web3Analytics = lazy(() => import("./pages/articles/Web3Analytics"));
 const Services = lazy(() => import("./pages/Services"));
+const LeadDiscovery = lazy(() => import("./pages/services/LeadDiscovery"));
+const MarketIntelligence = lazy(() => import("./pages/services/MarketIntelligence"));
+const CompetitorAnalysis = lazy(() => import("./pages/services/CompetitorAnalysis"));
+const ContactEnrichment = lazy(() => import("./pages/services/ContactEnrichment"));
 
 // Loading component
 const PageLoader = () => (
@@ -61,6 +65,10 @@ function App() {
           <Route path="/best-practices" element={<BestPractices />} />
           <Route path="/community" element={<Community />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/services/lead-discovery" element={<LeadDiscovery />} />
+          <Route path="/services/market-intelligence" element={<MarketIntelligence />} />
+          <Route path="/services/competitor-analysis" element={<CompetitorAnalysis />} />
+          <Route path="/services/contact-enrichment" element={<ContactEnrichment />} />
           <Route path="/articles/lead-generation-strategies" element={<LeadGenerationStrategies />} />
           <Route path="/articles/community-building" element={<CommunityBuilding />} />
           <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
