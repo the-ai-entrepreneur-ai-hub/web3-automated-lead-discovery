@@ -38,6 +38,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
+      console.log('API URL:', import.meta.env.VITE_API_URL);
       setError('Network error. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
