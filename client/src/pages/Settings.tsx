@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import Subscription from "@/components/Subscription";
 import { User } from "@/lib/types";
+import { config } from "@/lib/config";
 
 const Settings = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,7 +26,7 @@ const Settings = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
+      const response = await fetch(`${config.API_URL}/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

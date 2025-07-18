@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { config } from "@/lib/config";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ const ForgotPassword = () => {
     setMessage("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/forgot-password`, {
+      const response = await fetch(`${config.API_URL}/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

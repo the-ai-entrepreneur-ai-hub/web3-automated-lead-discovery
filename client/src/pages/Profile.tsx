@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@/lib/types";
+import { config } from "@/lib/config";
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -9,7 +10,7 @@ const Profile = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
+        const response = await fetch(`${config.API_URL}/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

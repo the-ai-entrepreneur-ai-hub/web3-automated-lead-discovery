@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { config } from "@/lib/config";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const VerifyEmail = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/verify-email`, {
+      const response = await fetch(`${config.API_URL}/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -86,7 +87,7 @@ const VerifyEmail = () => {
     setSuccess("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/resend-verification`, {
+      const response = await fetch(`${config.API_URL}/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

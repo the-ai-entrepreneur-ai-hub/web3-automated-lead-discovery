@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "@/lib/types";
 import { stripeApi } from "@/lib/stripe";
+import { config } from "@/lib/config";
 
 interface LeadAnalysis {
   state: string;
@@ -55,10 +56,10 @@ const Dashboard = () => {
     try {
       // Fetch user and projects in parallel for better performance
       const [userResponse, projectsResponse] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/profile`, {
+        fetch(`${config.API_URL}/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${import.meta.env.VITE_API_URL}/projects`, {
+        fetch(`${config.API_URL}/projects`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -141,7 +142,7 @@ const Dashboard = () => {
       // Premium users: Fetch all projects with social media from server
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/export-premium`, {
+        const response = await fetch(`${config.API_URL}/export-premium`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
