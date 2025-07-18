@@ -83,52 +83,20 @@ const LeadDiscovery = () => {
     }
   ];
 
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "$99",
-      period: "per month",
-      description: "Perfect for individual professionals and small teams",
-      features: [
-        "Up to 500 leads per month",
-        "Basic filtering and search",
-        "Email notifications",
-        "CSV export",
-        "Community support"
-      ],
-      popular: false
-    },
-    {
-      name: "Professional",
-      price: "$299",
-      period: "per month",
-      description: "Ideal for growing businesses and agencies",
-      features: [
-        "Up to 2,000 leads per month",
-        "Advanced filtering and AI insights",
-        "Real-time alerts",
-        "CRM integrations",
-        "API access",
-        "Priority support"
-      ],
-      popular: true
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact us",
-      description: "For large organizations with specific requirements",
-      features: [
-        "Unlimited leads",
-        "Custom AI models",
-        "White-label solutions",
-        "Dedicated account manager",
-        "Custom integrations",
-        "SLA guarantee"
-      ],
-      popular: false
-    }
-  ];
+  const pricingPlan = {
+    name: "Lead Discovery",
+    price: "$99",
+    period: "per month",
+    description: "AI-powered Web3 lead discovery for professionals",
+    features: [
+      "Up to 1,000 leads per month",
+      "AI-powered project scanning",
+      "Smart filtering by funding stage",
+      "Real-time notifications",
+      "CSV export",
+      "Email support"
+    ]
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,50 +242,35 @@ const LeadDiscovery = () => {
         {/* Pricing */}
         <div className="mb-20">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Choose Your Plan
+            Simple, Transparent Pricing
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`border-border/50 bg-card/50 backdrop-blur-sm relative ${
-                plan.popular ? 'ring-2 ring-blue-500/20 border-blue-500/30' : ''
-              }`}>
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-500 text-white border-blue-500">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                  </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full ${
-                      plan.popular 
-                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white' 
-                        : 'bg-card hover:bg-accent'
-                    }`}
-                    onClick={() => navigate('/register')}
-                  >
-                    {plan.name === 'Enterprise' ? 'Contact Sales' : 'Get Started'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="max-w-md mx-auto">
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm ring-2 ring-blue-500/20 border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-2xl text-center">{pricingPlan.name}</CardTitle>
+                <div className="flex items-baseline gap-1 justify-center">
+                  <span className="text-4xl font-bold text-foreground">{pricingPlan.price}</span>
+                  <span className="text-muted-foreground">/{pricingPlan.period}</span>
+                </div>
+                <CardDescription className="text-center">{pricingPlan.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mb-6">
+                  {pricingPlan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                  onClick={() => navigate('/register')}
+                >
+                  Get Started
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
