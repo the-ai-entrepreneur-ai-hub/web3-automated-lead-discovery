@@ -2,9 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, TrendingUp, Users, Target, Zap, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 
 const BestPractices = () => {
+  const navigate = useNavigate();
   const blogPosts = [
     {
       id: 1,
@@ -15,6 +17,7 @@ const BestPractices = () => {
       readTime: "8 min read",
       date: "December 15, 2024",
       tags: ["Lead Generation", "Strategy", "Growth"],
+      route: "/articles/lead-generation-strategies",
       content: `# 10 Web3 Lead Generation Strategies That Actually Work
 
 The Web3 space moves fast, and traditional lead generation methods often fall short. Here are 10 proven strategies that successful Web3 companies use to build their customer base.
@@ -61,6 +64,7 @@ Web3 lead generation requires a different approach than traditional B2B marketin
       readTime: "12 min read",
       date: "December 10, 2024",
       tags: ["Community", "Growth", "Engagement"],
+      route: "/articles/community-building",
       content: `# How to Build a Thriving Web3 Community from Scratch
 
 Building a strong community is crucial for Web3 success. Here's your comprehensive guide to creating an engaged, loyal following.
@@ -244,6 +248,7 @@ Web3 customer acquisition is about building trust, providing value, and creating
       readTime: "10 min read",
       date: "November 30, 2024",
       tags: ["Analytics", "Data", "Metrics"],
+      route: "/articles/web3-analytics",
       content: `# Data-Driven Web3 Marketing: Analytics That Matter
 
 In Web3, data is everywhere – but knowing what to track and how to use it effectively can make or break your marketing efforts.
@@ -727,7 +732,10 @@ Web3 conversion optimization requires a deep understanding of user needs, techni
                   <span>•</span>
                   <span>{blogPosts[0].date}</span>
                 </div>
-                <Button className="bg-gradient-to-r from-primary to-primary/80">
+                <Button 
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                  onClick={() => navigate(blogPosts[0].route)}
+                >
                   Read Full Article
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -779,7 +787,11 @@ Web3 conversion optimization requires a deep understanding of user needs, techni
                   <span>{post.date}</span>
                 </div>
                 
-                <Button variant="outline" className="w-full group-hover:bg-primary/10 group-hover:border-primary/30">
+                <Button 
+                  variant="outline" 
+                  className="w-full group-hover:bg-primary/10 group-hover:border-primary/30"
+                  onClick={() => post.route && navigate(post.route)}
+                >
                   Read Article
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
