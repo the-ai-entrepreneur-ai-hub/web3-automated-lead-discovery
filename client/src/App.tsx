@@ -16,6 +16,9 @@ const Settings = lazy(() => import("./pages/Settings"));
 const CaseStudies = lazy(() => import("./pages/CaseStudies"));
 const BestPractices = lazy(() => import("./pages/BestPractices"));
 const Community = lazy(() => import("./pages/Community"));
+const LeadGenerationStrategies = lazy(() => import("./pages/articles/LeadGenerationStrategies"));
+const CommunityBuilding = lazy(() => import("./pages/articles/CommunityBuilding"));
+const Web3Analytics = lazy(() => import("./pages/articles/Web3Analytics"));
 
 // Loading component
 const PageLoader = () => (
@@ -56,6 +59,9 @@ function App() {
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/best-practices" element={<BestPractices />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/articles/lead-generation-strategies" element={<LeadGenerationStrategies />} />
+          <Route path="/articles/community-building" element={<CommunityBuilding />} />
+          <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
