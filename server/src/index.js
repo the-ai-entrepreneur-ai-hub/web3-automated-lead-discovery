@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const compression = require('compression');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
+const { sendPaymentReceipt, sendTestReceipt } = require('./emailServices/paymentReceiptService');
 const { stripe, STRIPE_CONFIG } = require('./stripe');
 require('dotenv').config();
 
@@ -76,6 +77,34 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           }
         ]);
         console.log(`User ${session.metadata.userEmail} upgraded to paid tier`);
+        
+        // Send payment receipt email
+        try {
+          const userDetails = {
+            firstName: session.metadata.firstName || 'Valued Customer',
+            lastName: session.metadata.lastName || '',
+            email: session.metadata.userEmail
+          };
+          
+          const paymentDetails = {
+            amount: session.amount_total,
+            currency: session.currency,
+            paymentMethod: 'Credit Card',
+            transactionId: session.payment_intent,
+            date: new Date(session.created * 1000).toISOString()
+          };
+          
+          const subscriptionDetails = {
+            planName: 'Web3Radar Premium',
+            billingCycle: 'Monthly',
+            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          };
+          
+          await sendPaymentReceipt(userDetails, paymentDetails, subscriptionDetails);
+          console.log(`Payment receipt sent to ${session.metadata.userEmail}`);
+        } catch (emailError) {
+          console.error('Error sending payment receipt:', emailError);
+        }
       } catch (error) {
         console.error('Error updating user tier:', error);
       }
@@ -939,6 +968,8 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       metadata: {
         userId: req.user.id,
         userEmail: user.fields.email,
+        firstName: user.fields.firstName,
+        lastName: user.fields.lastName,
       },
     });
 
@@ -1014,6 +1045,27 @@ app.post('/cancel-subscription', authenticateToken, async (req, res) => {
   }
 });
 
+
+// Test payment receipt email endpoint
+app.post('/test-payment-receipt', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  
+  try {
+    const result = await sendTestReceipt(email);
+    res.json({ 
+      success: true, 
+      message: 'Test payment receipt sent successfully',
+      messageId: result.messageId
+    });
+  } catch (error) {
+    console.error('Error sending test receipt:', error);
+    res.status(500).json({ error: 'Failed to send test receipt' });
+  }
+});
 
 // Cleanup function for expired verification codes
 const cleanupExpiredVerificationCodes = async () => {
