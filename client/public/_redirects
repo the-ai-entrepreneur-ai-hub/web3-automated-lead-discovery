@@ -1,21 +1,2 @@
 # SPA fallback for client-side routing
 /*    /index.html   200
-
-# API redirects to Railway backend
-/api/*  https://web3-automated-lead-discovery-production.up.railway.app/:splat  200
-/register  https://web3-automated-lead-discovery-production.up.railway.app/register  200
-/login  https://web3-automated-lead-discovery-production.up.railway.app/login  200
-/verify-email  https://web3-automated-lead-discovery-production.up.railway.app/verify-email  200
-/resend-verification  https://web3-automated-lead-discovery-production.up.railway.app/resend-verification  200
-/forgot-password  https://web3-automated-lead-discovery-production.up.railway.app/forgot-password  200
-/reset-password  https://web3-automated-lead-discovery-production.up.railway.app/reset-password  200
-/projects  https://web3-automated-lead-discovery-production.up.railway.app/projects  200
-/profile  https://web3-automated-lead-discovery-production.up.railway.app/profile  200
-/create-checkout-session  https://web3-automated-lead-discovery-production.up.railway.app/create-checkout-session  200
-/subscription-status  https://web3-automated-lead-discovery-production.up.railway.app/subscription-status  200
-/cancel-subscription  https://web3-automated-lead-discovery-production.up.railway.app/cancel-subscription  200
-/stripe-webhook  https://web3-automated-lead-discovery-production.up.railway.app/stripe-webhook  200
-/export-premium  https://web3-automated-lead-discovery-production.up.railway.app/export-premium  200
-/logout  https://web3-automated-lead-discovery-production.up.railway.app/logout  200
-/debug-users  https://web3-automated-lead-discovery-production.up.railway.app/debug-users  200
-/seed  https://web3-automated-lead-discovery-production.up.railway.app/seed  200
