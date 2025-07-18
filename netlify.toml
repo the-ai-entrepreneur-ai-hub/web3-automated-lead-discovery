@@ -38,71 +38,71 @@
   status = 200
   conditions = {Role = ["admin", "editor"], Country = ["US"]}
 
-# API redirects to your backend server
+# API redirects to Railway backend
 [[redirects]]
   from = "/api/*"
-  to = "https://web3-prospector-backend.herokuapp.com/:splat"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/:splat"
   status = 200
   force = true
 
 # Specific API endpoints
 [[redirects]]
   from = "/register"
-  to = "https://web3-prospector-backend.herokuapp.com/register"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/register"
   status = 200
   force = true
 
 [[redirects]]
   from = "/login"
-  to = "https://web3-prospector-backend.herokuapp.com/login"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/login"
   status = 200
   force = true
 
 [[redirects]]
   from = "/verify-email"
-  to = "https://web3-prospector-backend.herokuapp.com/verify-email"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/verify-email"
   status = 200
   force = true
 
 [[redirects]]
   from = "/projects"
-  to = "https://web3-prospector-backend.herokuapp.com/projects"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/projects"
   status = 200
   force = true
 
 [[redirects]]
   from = "/profile"
-  to = "https://web3-prospector-backend.herokuapp.com/profile"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/profile"
   status = 200
   force = true
 
 [[redirects]]
   from = "/create-checkout-session"
-  to = "https://web3-prospector-backend.herokuapp.com/create-checkout-session"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/create-checkout-session"
   status = 200
   force = true
 
 [[redirects]]
   from = "/subscription-status"
-  to = "https://web3-prospector-backend.herokuapp.com/subscription-status"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/subscription-status"
   status = 200
   force = true
 
 [[redirects]]
   from = "/cancel-subscription"
-  to = "https://web3-prospector-backend.herokuapp.com/cancel-subscription"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/cancel-subscription"
   status = 200
   force = true
 
 [[redirects]]
   from = "/stripe-webhook"
-  to = "https://web3-prospector-backend.herokuapp.com/stripe-webhook"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/stripe-webhook"
   status = 200
   force = true
 
 [[redirects]]
   from = "/export-premium"
-  to = "https://web3-prospector-backend.herokuapp.com/export-premium"
+  to = "https://web3-automated-lead-discovery-production.up.railway.app/export-premium"
   status = 200
   force = true
 
