@@ -15,7 +15,7 @@ const BestPractices = () => {
       image: "./lovable-uploads/e32f88c6-95cd-477e-a3c7-135bd8195930.png",
       category: "Lead Generation",
       readTime: "8 min read",
-      date: "December 15, 2024",
+      date: "May 15, 2025",
       tags: ["Lead Generation", "Strategy", "Growth"],
       route: "/articles/lead-generation-strategies",
       content: `# 10 Web3 Lead Generation Strategies That Actually Work
@@ -62,7 +62,7 @@ Web3 lead generation requires a different approach than traditional B2B marketin
       image: "./lovable-uploads/4ab4d2bb-7213-4b49-8f09-cb1ae96595fe.png",
       category: "Community Building",
       readTime: "12 min read",
-      date: "December 10, 2024",
+      date: "May 10, 2025",
       tags: ["Community", "Growth", "Engagement"],
       route: "/articles/community-building",
       content: `# How to Build a Thriving Web3 Community from Scratch
@@ -128,7 +128,7 @@ Focus on creating lasting value rather than quick growth. A smaller, engaged com
       image: "./lovable-uploads/39661301-d71f-4dc7-9970-c1f08082b338.png",
       category: "Customer Acquisition",
       readTime: "15 min read",
-      date: "December 5, 2024",
+      date: "May 5, 2025",
       tags: ["Customer Acquisition", "Strategy", "Growth"],
       content: `# The Ultimate Guide to Web3 Customer Acquisition
 
@@ -246,7 +246,7 @@ Web3 customer acquisition is about building trust, providing value, and creating
       image: "./lovable-uploads/0d560163-3c3f-4d9e-8e8e-0ae7f2bf117d.png",
       category: "Analytics",
       readTime: "10 min read",
-      date: "November 30, 2024",
+      date: "May 30, 2025",
       tags: ["Analytics", "Data", "Metrics"],
       route: "/articles/web3-analytics",
       content: `# Data-Driven Web3 Marketing: Analytics That Matter
@@ -387,7 +387,7 @@ Web3 marketing analytics requires a unique approach that combines traditional me
       image: "./lovable-uploads/8c3f1f57-bfd1-4d77-aa25-8518722c3878.png",
       category: "Trust Building",
       readTime: "9 min read",
-      date: "November 25, 2024",
+      date: "May 25, 2025",
       tags: ["Trust", "Transparency", "Community"],
       content: `# Building Trust in Web3: Transparency and Authenticity
 
@@ -514,7 +514,7 @@ Building trust in Web3 is a long-term investment that requires consistent effort
       image: "./lovable-uploads/171c74a3-9894-44e5-a9ee-4107954d54f1.png",
       category: "Conversion Optimization",
       readTime: "11 min read",
-      date: "November 20, 2024",
+      date: "May 20, 2025"
       tags: ["Conversion", "UX", "Optimization"],
       content: `# Web3 Conversion Optimization: Turn Visitors into Users
 
