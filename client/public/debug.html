@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug API Connection</title>
+</head>
+<body>
+    <h1>Debug API Connection</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const apiUrl = 'https://web3-automated-lead-discovery-production.up.railway.app';
+            
+            resultDiv.innerHTML = '<p>Testing API connection...</p>';
+            
+            try {
+                console.log('Testing API URL:', apiUrl);
+                
+                // Test 1: Basic endpoint
+                const response1 = await fetch(apiUrl);
+                const text1 = await response1.text();
+                console.log('Basic endpoint response:', text1);
+                
+                // Test 2: Login endpoint
+                const response2 = await fetch(apiUrl + '/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@test.com',
+                        password: 'test'
+                    })
+                });
+                
+                const json2 = await response2.json();
+                console.log('Login endpoint response:', json2);
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ API is working!</h3>
+                    <p><strong>Basic endpoint:</strong> ${text1}</p>
+                    <p><strong>Login endpoint:</strong> ${JSON.stringify(json2)}</p>
+                    <p><strong>Check browser console for full details</strong></p>
+                `;
+                
+            } catch (error) {
+                console.error('API test failed:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ API test failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Check browser console for full details</strong></p>
+                `;
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

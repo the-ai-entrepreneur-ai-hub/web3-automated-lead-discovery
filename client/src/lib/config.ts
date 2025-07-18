@@ -19,3 +19,15 @@ console.log('🔧 Config loaded:', {
     PROD: import.meta.env.PROD
   }
 });
+
+// Test API connectivity immediately
+console.log('🚀 Testing API connectivity...');
+fetch(config.API_URL)
+  .then(response => response.text())
+  .then(data => {
+    console.log('✅ API connection test successful:', data);
+  })
+  .catch(error => {
+    console.error('❌ API connection test failed:', error);
+    console.error('This might explain the Network errors!');
+  });
