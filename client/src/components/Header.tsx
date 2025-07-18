@@ -114,7 +114,7 @@ const Header = () => {
         { name: "Contact Enrichment", href: "/services/contact-enrichment", description: "Enhanced contact information" }
       ]
     },
-    { name: "Who We Are", href: "#about" },
+    { name: "Who We Are", href: "/about" },
     { 
       name: "Success Stories", 
       href: "#", 
