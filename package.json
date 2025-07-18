@@ -1,0 +1,19 @@
+{
+  "name": "web3-prospector",
+  "version": "1.0.0",
+  "description": "Web3 Prospector - Full Stack Application",
+  "main": "server/src/index.js",
+  "scripts": {
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev",
+    "install-server": "cd server && npm install",
+    "build": "cd client && npm install && npm run build"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "keywords": ["web3", "blockchain", "lead-generation"],
+  "author": "",
+  "license": "ISC"
+}
