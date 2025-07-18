@@ -1,4 +1,29 @@
-# Welcome to your Lovable project
+# Web3 Prospector - Frontend
+
+Frontend application for the Web3 Prospector platform built with React, TypeScript, and Vite.
+
+## Environment Setup
+
+**IMPORTANT**: For production deployment on Netlify, set these environment variables in your Netlify dashboard:
+
+### Required Environment Variables
+```
+VITE_API_URL = https://web3-automated-lead-discovery-production.up.railway.app
+VITE_STRIPE_PUBLISHABLE_KEY = pk_live_51RlQ0ZC1BQAlOs1ZJAlFZgbciKe0xFPBOkYhNlAbwP0FezYKthOrpMukNLzgbg26nAWlw8uFIYhe6uHEEpmTw6lK00AoGgCxoF
+NODE_ENV = production
+```
+
+### How to set Netlify Environment Variables:
+1. Go to: https://app.netlify.com/sites/dulcet-madeleine-2018aa/settings/env
+2. Click "Add variable" for each environment variable above
+3. After adding all variables, go to Deploys tab
+4. Click "Trigger deploy" → "Deploy site"
+
+## Troubleshooting Network Errors
+If you see "Network error" messages:
+1. Check browser console for environment debug logs
+2. Verify environment variables are set in Netlify dashboard
+3. Ensure Railway backend is running at the configured URL
 
 ## Project info
 
