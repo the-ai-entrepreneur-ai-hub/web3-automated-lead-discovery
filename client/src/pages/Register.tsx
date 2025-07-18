@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { config } from "@/lib/config";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -37,7 +38,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/register`, {
+      const response = await fetch(`${config.API_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

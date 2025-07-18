@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { config } from "@/lib/config";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +20,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
+      const response = await fetch(`${config.API_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -1,14 +1,15 @@
 import { loadStripe } from '@stripe/stripe-js';
+import { config } from '@/lib/config';
 
 // Initialize Stripe with publishable key
 export const getStripe = () => {
-  return loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+  return loadStripe(config.STRIPE_PUBLISHABLE_KEY);
 };
 
 // Stripe related API calls
 export const stripeApi = {
   createCheckoutSession: async (token: string) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/create-checkout-session`, {
+    const response = await fetch(`${config.API_URL}/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -24,7 +25,7 @@ export const stripeApi = {
   },
 
   getSubscriptionStatus: async (token: string) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/subscription-status`, {
+    const response = await fetch(`${config.API_URL}/subscription-status`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -38,7 +39,7 @@ export const stripeApi = {
   },
 
   cancelSubscription: async (token: string) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/cancel-subscription`, {
+    const response = await fetch(`${config.API_URL}/cancel-subscription`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

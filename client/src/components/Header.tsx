@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { UserCircle, LogOut, Menu, X, ChevronDown, Settings } from "lucide-react";
 import { User } from "@/lib/types";
+import { config } from "@/lib/config";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,7 +21,7 @@ const Header = () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
+          const response = await fetch(`${config.API_URL}/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -80,7 +81,7 @@ const Header = () => {
     try {
       const token = localStorage.getItem("token");
       if (token) {
-        await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
+        await fetch(`${config.API_URL}/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
