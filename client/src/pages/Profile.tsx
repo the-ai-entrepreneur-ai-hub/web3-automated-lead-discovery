@@ -9,7 +9,7 @@ const Profile = () => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch('http://localhost:3005/profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
