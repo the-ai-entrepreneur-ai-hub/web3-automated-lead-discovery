@@ -24,6 +24,7 @@ const LeadDiscovery = lazy(() => import("./pages/services/LeadDiscovery"));
 const MarketIntelligence = lazy(() => import("./pages/services/MarketIntelligence"));
 const CompetitorAnalysis = lazy(() => import("./pages/services/CompetitorAnalysis"));
 const ContactEnrichment = lazy(() => import("./pages/services/ContactEnrichment"));
+const About = lazy(() => import("./pages/About"));
 
 // Loading component
 const PageLoader = () => (
@@ -72,6 +73,7 @@ function App() {
           <Route path="/articles/lead-generation-strategies" element={<LeadGenerationStrategies />} />
           <Route path="/articles/community-building" element={<CommunityBuilding />} />
           <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
