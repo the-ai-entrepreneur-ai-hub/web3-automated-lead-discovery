@@ -514,7 +514,7 @@ Building trust in Web3 is a long-term investment that requires consistent effort
       image: "./lovable-uploads/171c74a3-9894-44e5-a9ee-4107954d54f1.png",
       category: "Conversion Optimization",
       readTime: "11 min read",
-      date: "May 20, 2025"
+      date: "May 20, 2025",
       tags: ["Conversion", "UX", "Optimization"],
       content: `# Web3 Conversion Optimization: Turn Visitors into Users
 
