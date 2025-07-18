@@ -63,7 +63,7 @@ const DemoSection = () => {
       email: "info@tokenflow.example",
       twitter: "https://twitter.com/tokenflow",
       linkedin: "https://linkedin.com/company/tokenflow",
-      dateAdded: "2025-01-08"
+      dateAdded: "2025-01-08",
       funding: "$3.1M",
       category: "Analytics"
     }
