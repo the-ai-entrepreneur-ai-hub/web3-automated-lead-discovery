@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { getStripe, stripeApi } from '@/lib/stripe';
 import { User } from '@/lib/types';
 
@@ -26,6 +28,9 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountInfo, setDiscountInfo] = useState<any>(null);
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -46,6 +51,36 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
     }
   };
 
+  const handleValidateDiscountCode = async () => {
+    if (!discountCode.trim()) return;
+    
+    setIsValidatingCode(true);
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in to validate discount code');
+        return;
+      }
+
+      const result = await stripeApi.validateDiscountCode(token, discountCode);
+      if (result.valid) {
+        setDiscountInfo(result);
+        setError(null);
+      } else {
+        setDiscountInfo(null);
+        setError(result.message || 'Invalid discount code');
+      }
+    } catch (err) {
+      console.error('Error validating discount code:', err);
+      setDiscountInfo(null);
+      setError('Failed to validate discount code');
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
+
   const handleUpgrade = async () => {
     setIsLoading(true);
     setError(null);
@@ -57,7 +92,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         return;
       }
 
-      const { url } = await stripeApi.createCheckoutSession(token);
+      const { url } = await stripeApi.createCheckoutSession(token, discountCode.trim() || undefined);
       
       // Redirect to Stripe Checkout
       window.location.href = url;
@@ -142,14 +177,49 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
           </div>
         )}
 
-        <div className="space-y-2">
+        <div className="space-y-4">
+          {!isPaid && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="discount-code">Discount Code (Optional)</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="discount-code"
+                    placeholder="Enter discount code"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value)}
+                    disabled={isLoading || isValidatingCode}
+                  />
+                  <Button
+                    onClick={handleValidateDiscountCode}
+                    disabled={!discountCode.trim() || isValidatingCode}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isValidatingCode ? 'Checking...' : 'Apply'}
+                  </Button>
+                </div>
+              </div>
+              
+              {discountInfo && (
+                <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                  ✓ Code applied: {discountInfo.percentage}% off {discountInfo.duration === 'once' ? 'first month' : 'subscription'}
+                </div>
+              )}
+              
+              <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                ✨ Start with a 7-day free trial!
+              </div>
+            </div>
+          )}
+          
           {!isPaid ? (
             <Button
               onClick={handleUpgrade}
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
-              {isLoading ? 'Processing...' : 'Upgrade to Pro - $99/month'}
+              {isLoading ? 'Processing...' : 'Start 7-Day Free Trial'}
             </Button>
           ) : (
             <div className="space-y-2">

@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
 const compression = require('compression');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const session = require('express-session');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
 const { sendPaymentReceipt, sendTestReceipt } = require('./emailServices/paymentReceiptService');
@@ -16,6 +19,7 @@ const port = process.env.PORT || 3006;
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_TOKEN }).base('app32Pwdg1yJPDRA7');
 const userTable = base('Users');
+const waitlistTable = base('Service Waitlist');
 
 // Simple in-memory cache for projects (5 minutes TTL)
 let projectsCache = {
@@ -45,6 +49,68 @@ app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io', 'https://web3-automated-lead-discovery.netlify.app', 'https://web3-prospector.netlify.app', 'https://6879cee60f4492000841f687--dulcet-madeleine-2018aa.netlify.app', 'https://dulcet-madeleine-2018aa.netlify.app', 'https://rawfreedomai.com'],
   credentials: true
 }));
+
+// Session configuration for OAuth
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your_session_secret_here',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true in production with HTTPS
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport configuration
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: "/auth/google/callback"
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Check if user already exists
+    const existingUser = await userTable.select({
+      filterByFormula: `{email} = "${profile.emails[0].value}"`
+    }).firstPage();
+
+    if (existingUser.length > 0) {
+      // User exists, return the user
+      return done(null, existingUser[0]);
+    } else {
+      // Create new user
+      const newUser = await userTable.create([
+        {
+          fields: {
+            email: profile.emails[0].value,
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+            company: '', // Will be filled later
+            tier: 'free',
+            isVerified: true, // Google accounts are pre-verified
+            googleId: profile.id
+          }
+        }
+      ]);
+      return done(null, newUser[0]);
+    }
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await userTable.find(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
 
 // Stripe webhook endpoint needs raw body, so place it before JSON middleware
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -174,6 +240,28 @@ const authenticateToken = (req, res, next) => {
 app.get('/', (req, res) => {
   res.send('Hello from the Web3 Prospector server!');
 });
+
+// Google OAuth routes
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { session: false }),
+  async (req, res) => {
+    try {
+      // Generate JWT token for the authenticated user
+      const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      
+      // Redirect to frontend with token
+      const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth-success?token=${token}`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+    }
+  }
+);
 
 // Registration endpoint - Step 1: Send verification code
 app.post('/register', async (req, res) => {
@@ -759,6 +847,57 @@ app.post('/reset-password', async (req, res) => {
   }
 });
 
+// Join service waitlist
+app.post('/join-waitlist', async (req, res) => {
+  const { email, serviceTag } = req.body;
+
+  if (!email || !serviceTag) {
+    return res.status(400).json({ error: 'Email and service tag are required' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Validate service tag
+  const validServiceTags = ['market-intelligence', 'competitor-analysis', 'contact-enrichment'];
+  if (!validServiceTags.includes(serviceTag)) {
+    return res.status(400).json({ error: 'Invalid service tag' });
+  }
+
+  try {
+    // Check if email already exists for this service
+    const existingEntry = await waitlistTable.select({
+      filterByFormula: `AND({Email} = "${email}", {Service Tag} = "${serviceTag}")`
+    }).firstPage();
+
+    if (existingEntry.length > 0) {
+      return res.status(400).json({ error: 'Email already registered for this service' });
+    }
+
+    // Add to waitlist
+    await waitlistTable.create([
+      {
+        fields: {
+          Email: email,
+          'Service Tag': serviceTag,
+          'Date Added': new Date().toISOString().split('T')[0],
+          Status: 'active',
+          Notified: false
+        }
+      }
+    ]);
+
+    console.log(`Added ${email} to waitlist for ${serviceTag}`);
+    res.json({ message: 'Successfully joined waitlist!' });
+  } catch (error) {
+    console.error('Waitlist signup error:', error);
+    res.status(500).json({ error: 'Failed to join waitlist. Please try again.' });
+  }
+});
+
 app.get('/profile', authenticateToken, async (req, res) => {
   try {
     const records = await userTable.find(req.user.id);
@@ -932,6 +1071,7 @@ app.get('/seed', async (req, res) => {
 // Create checkout session for subscription
 app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
+    const { discountCode } = req.body;
     const user = await userTable.find(req.user.id);
     
     if (!user) {
@@ -943,7 +1083,8 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'User already has active subscription' });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Create session configuration
+    const sessionConfig = {
       payment_method_types: ['card'],
       line_items: [
         {
@@ -971,7 +1112,41 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
         firstName: user.fields.firstName,
         lastName: user.fields.lastName,
       },
-    });
+      subscription_data: {
+        trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS, // Add 7-day free trial
+      },
+    };
+
+    // Apply discount code if provided
+    if (discountCode && STRIPE_CONFIG.DISCOUNT_CODES[discountCode]) {
+      try {
+        // Create or retrieve discount coupon
+        let coupon;
+        try {
+          coupon = await stripe.coupons.retrieve(discountCode);
+        } catch (couponError) {
+          // Create new coupon if it doesn't exist
+          const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[discountCode];
+          coupon = await stripe.coupons.create({
+            id: discountCode,
+            percent_off: discountInfo.percentage,
+            duration: discountInfo.duration,
+            name: discountInfo.description,
+          });
+        }
+
+        sessionConfig.discounts = [{
+          coupon: coupon.id,
+        }];
+        
+        console.log(`Applied discount code: ${discountCode} (${coupon.percent_off}% off)`);
+      } catch (couponError) {
+        console.error('Error applying discount code:', couponError);
+        return res.status(400).json({ error: 'Invalid discount code' });
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     res.json({ url: session.url });
   } catch (error) {
@@ -980,6 +1155,35 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   }
 });
 
+// Validate discount code endpoint
+app.post('/validate-discount-code', authenticateToken, async (req, res) => {
+  try {
+    const { discountCode } = req.body;
+    
+    if (!discountCode) {
+      return res.status(400).json({ error: 'Discount code is required' });
+    }
+
+    // Check if discount code exists in our configuration
+    if (STRIPE_CONFIG.DISCOUNT_CODES[discountCode]) {
+      const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[discountCode];
+      return res.json({
+        valid: true,
+        percentage: discountInfo.percentage,
+        description: discountInfo.description,
+        duration: discountInfo.duration
+      });
+    } else {
+      return res.json({
+        valid: false,
+        message: 'Invalid discount code'
+      });
+    }
+  } catch (error) {
+    console.error('Error validating discount code:', error);
+    res.status(500).json({ error: 'Failed to validate discount code' });
+  }
+});
 
 // Get user's subscription status
 app.get('/subscription-status', authenticateToken, async (req, res) => {

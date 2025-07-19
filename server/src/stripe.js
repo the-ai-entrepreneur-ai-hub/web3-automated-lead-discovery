@@ -13,6 +13,14 @@ const STRIPE_CONFIG = {
   CURRENCY: 'usd',
   SUCCESS_URL: `${process.env.CLIENT_URL}/dashboard?success=true`,
   CANCEL_URL: `${process.env.CLIENT_URL}/dashboard?canceled=true`,
+  FREE_TRIAL_DAYS: 7, // 7-day free trial
+  DISCOUNT_CODES: {
+    'ProspectingGOAT12': {
+      percentage: 70, // 70% off
+      duration: 'once', // Apply discount only for first month
+      description: '70% off first month'
+    }
+  }
 };
 
 module.exports = {

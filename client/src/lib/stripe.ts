@@ -8,17 +8,35 @@ export const getStripe = () => {
 
 // Stripe related API calls
 export const stripeApi = {
-  createCheckoutSession: async (token: string) => {
+  createCheckoutSession: async (token: string, discountCode?: string) => {
     const response = await fetch(`${config.API_URL}/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ discountCode }),
     });
 
     if (!response.ok) {
       throw new Error('Failed to create checkout session');
+    }
+
+    return response.json();
+  },
+
+  validateDiscountCode: async (token: string, discountCode: string) => {
+    const response = await fetch(`${config.API_URL}/validate-discount-code`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ discountCode }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to validate discount code');
     }
 
     return response.json();
