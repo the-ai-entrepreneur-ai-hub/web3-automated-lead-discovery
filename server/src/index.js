@@ -85,6 +85,9 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
+  console.log('🔍 Google Strategy callback triggered');
+  console.log('📧 Profile email:', profile.emails?.[0]?.value);
+  console.log('👤 Profile data:', { id: profile.id, name: profile.name });
   try {
     console.log('🔍 Google OAuth callback received for user:', profile.emails[0].value);
     
@@ -266,11 +269,19 @@ app.get('/', (req, res) => {
 // Google OAuth routes
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
+  console.log('🔗 Callback URL will be:', `${req.protocol}://${req.get('host')}/auth/google/callback`);
+  
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_google_client_id_here')) {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_not_configured`);
   }
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  
+  try {
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  } catch (error) {
+    console.error('❌ Error during Google OAuth initiation:', error);
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_initiation_failed`);
+  }
 });
 
 app.get('/auth/google/callback',
