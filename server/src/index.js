@@ -363,22 +363,31 @@ app.get('/auth/google/callback',
   },
   async (req, res) => {
     try {
+      console.log('🔍 Processing OAuth callback...');
+      console.log('👤 User object:', req.user);
+      console.log('🔑 User ID:', req.user?.id);
+      console.log('📧 User fields:', req.user?.fields);
+      
       if (!req.user) {
         console.error('❌ No user data received from Google');
         return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=no_user_data`);
       }
 
-      console.log('✅ User authenticated successfully:', req.user.fields.email);
+      console.log('✅ User authenticated successfully:', req.user.fields?.email || req.user.email);
       
       // Generate JWT token for the authenticated user
       const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      console.log('🎫 Generated JWT token for user:', req.user.id);
       
       // Redirect to frontend with token
       const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth-success?token=${token}`;
       console.log('🔄 Redirecting to:', redirectUrl);
+      console.log('🌐 CLIENT_URL from env:', process.env.CLIENT_URL);
+      
       res.redirect(redirectUrl);
     } catch (error) {
       console.error('❌ Google OAuth callback error:', error);
+      console.error('📋 Error stack:', error.stack);
       res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_callback_failed`);
     }
   }
