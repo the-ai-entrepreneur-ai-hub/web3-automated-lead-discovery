@@ -17,6 +17,9 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3006;
 
+// Trust proxy for Railway deployment (enables proper HTTPS detection)
+app.set('trust proxy', 1);
+
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_TOKEN }).base('app32Pwdg1yJPDRA7');
 const userTable = base('Users');
 const waitlistTable = base('Service Waitlist');
@@ -55,7 +58,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret_here',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true in production with HTTPS
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Initialize Passport
@@ -83,7 +90,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "/auth/google/callback"
+  callbackURL: "https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   console.log('🔍 Google Strategy callback triggered');
   console.log('📧 Profile email:', profile.emails?.[0]?.value);
