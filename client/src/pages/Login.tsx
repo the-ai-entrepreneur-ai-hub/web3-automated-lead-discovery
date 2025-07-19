@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { config } from "@/lib/config";
 
 const Login = () => {
@@ -13,6 +13,21 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Check for OAuth errors in URL params
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      const errorMessages: { [key: string]: string } = {
+        'oauth_failed': 'Google authentication failed. Please try again.',
+        'oauth_not_configured': 'Google authentication is not properly configured. Please contact support.',
+        'no_user_data': 'Failed to get user information from Google. Please try again.',
+        'oauth_callback_failed': 'Google authentication callback failed. Please try again.'
+      };
+      setError(errorMessages[oauthError] || 'Authentication failed. Please try again.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
