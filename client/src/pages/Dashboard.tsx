@@ -44,11 +44,17 @@ const Dashboard = () => {
 
   // Memoize API calls to prevent unnecessary re-renders
   const fetchData = useCallback(async () => {
+    console.log('🔍 Dashboard: Checking authentication...');
     const token = localStorage.getItem("token");
+    console.log('🎫 Token found:', token ? 'YES' : 'NO');
+    
     if (!token) {
+      console.log('❌ No token found, redirecting to login');
       navigate("/login");
       return;
     }
+    
+    console.log('✅ Token found, proceeding with data fetch');
 
     setIsLoading(true);
     setProjectsLoading(true);
