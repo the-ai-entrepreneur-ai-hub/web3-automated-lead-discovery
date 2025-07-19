@@ -30,33 +30,43 @@ const AuthSuccess = () => {
       console.log('📡 Fetching user profile data...');
       console.log('🔗 API URL:', config.API_URL);
       
-      // Try a simpler approach first - just redirect to dashboard and let it fetch user data
-      console.log('🔄 Redirecting to dashboard immediately...');
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 500); // Longer delay to ensure everything is ready
+      // Fetch user data first, then redirect
+      console.log('📡 Fetching user profile data before redirect...');
       
-      // Still try to fetch user data in background for faster loading
-      fetch(`${config.API_URL}/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(response => {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch(`${config.API_URL}/profile`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
           console.log('📥 Profile response status:', response.status);
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-          return response.json();
-        })
-        .then(userData => {
+          
+          const userData = await response.json();
           console.log('✅ User data received and stored:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
-        })
-        .catch(error => {
+          
+          // Wait a bit more to ensure localStorage is written
+          setTimeout(() => {
+            console.log('🔄 Redirecting to dashboard with user data ready...');
+            navigate('/dashboard', { replace: true });
+          }, 200);
+          
+        } catch (error) {
           console.error('❌ Error fetching user data:', error);
-          console.log('⚠️ Dashboard will fetch user data instead');
-        });
+          console.log('⚠️ Redirecting to dashboard anyway - it will fetch user data');
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 1000);
+        }
+      };
+      
+      // Start user data fetch
+      fetchUserData();
     } else {
       console.error('❌ No token found in URL parameters');
       // No token found, redirect to login
