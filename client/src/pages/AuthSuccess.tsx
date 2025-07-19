@@ -30,7 +30,13 @@ const AuthSuccess = () => {
       console.log('📡 Fetching user profile data...');
       console.log('🔗 API URL:', config.API_URL);
       
-      // Fetch user data
+      // Try a simpler approach first - just redirect to dashboard and let it fetch user data
+      console.log('🔄 Redirecting to dashboard immediately...');
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 500); // Longer delay to ensure everything is ready
+      
+      // Still try to fetch user data in background for faster loading
       fetch(`${config.API_URL}/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -44,21 +50,12 @@ const AuthSuccess = () => {
           return response.json();
         })
         .then(userData => {
-          console.log('✅ User data received:', userData);
+          console.log('✅ User data received and stored:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
-          console.log('🔄 Redirecting to dashboard...');
-          // Small delay to ensure localStorage is updated
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 100);
         })
         .catch(error => {
           console.error('❌ Error fetching user data:', error);
-          console.log('🔄 Redirecting to dashboard anyway...');
-          // Still redirect to dashboard, user data will be fetched there
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 100);
+          console.log('⚠️ Dashboard will fetch user data instead');
         });
     } else {
       console.error('❌ No token found in URL parameters');

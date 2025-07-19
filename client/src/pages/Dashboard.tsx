@@ -135,7 +135,12 @@ const Dashboard = () => {
       }
     }
 
-    fetchData();
+    // Small delay to ensure localStorage is populated from OAuth flow
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [fetchData]);
 
 
