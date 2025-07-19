@@ -54,12 +54,15 @@ app.use(cors({
 }));
 
 // Session configuration for OAuth
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production' || !!process.env.RAILWAY_PROJECT_ID;
+console.log('🔧 Environment check:', { NODE_ENV: process.env.NODE_ENV, RAILWAY_PROJECT_ID: !!process.env.RAILWAY_PROJECT_ID, isProduction });
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret_here',
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    secure: isProduction, // Use secure cookies in production/Railway
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
@@ -75,7 +78,8 @@ console.log('🔐 OAuth Configuration:', {
   hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
   clientIdLength: process.env.GOOGLE_CLIENT_ID?.length || 0,
   clientSecretLength: process.env.GOOGLE_CLIENT_SECRET?.length || 0,
-  isPlaceholder: process.env.GOOGLE_CLIENT_ID?.includes('your_google_client_id_here') || false
+  isPlaceholder: process.env.GOOGLE_CLIENT_ID?.includes('your_google_client_id_here') || false,
+  callbackURL: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback'
 });
 
 // Passport configuration
@@ -279,15 +283,18 @@ app.get('/debug/oauth', (req, res) => {
     hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
     hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
     clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
-    callbackUrl: `${req.protocol}://${req.get('host')}/auth/google/callback`,
-    isConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+    callbackUrl: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback',
+    detectedUrl: `${req.protocol}://${req.get('host')}/auth/google/callback`,
+    isConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    trustProxy: app.get('trust proxy'),
+    headers: req.headers
   });
 });
 
 // Google OAuth routes
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
-  console.log('🔗 Callback URL will be:', `${req.protocol}://${req.get('host')}/auth/google/callback`);
+  console.log('🔗 Callback URL will be: https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback');
   
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_google_client_id_here')) {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
