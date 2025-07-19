@@ -266,6 +266,17 @@ app.get('/', (req, res) => {
   res.send('Hello from the Web3 Prospector server!');
 });
 
+// Debug endpoint to check OAuth configuration
+app.get('/debug/oauth', (req, res) => {
+  res.json({
+    hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+    hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
+    callbackUrl: `${req.protocol}://${req.get('host')}/auth/google/callback`,
+    isConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+  });
+});
+
 // Google OAuth routes
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
