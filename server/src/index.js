@@ -62,22 +62,42 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Debug OAuth configuration
+console.log('🔐 OAuth Configuration:', {
+  hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+  hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  clientIdLength: process.env.GOOGLE_CLIENT_ID?.length || 0,
+  clientSecretLength: process.env.GOOGLE_CLIENT_SECRET?.length || 0,
+  isPlaceholder: process.env.GOOGLE_CLIENT_ID?.includes('your_google_client_id_here') || false
+});
+
 // Passport configuration
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.error('❌ Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
+} else if (process.env.GOOGLE_CLIENT_ID.includes('your_google_client_id_here')) {
+  console.error('❌ Google OAuth credentials are still placeholder values. Please replace with real credentials from Google Cloud Console.');
+} else {
+  console.log('✅ Google OAuth credentials configured');
+}
+
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log('🔍 Google OAuth callback received for user:', profile.emails[0].value);
+    
     // Check if user already exists
     const existingUser = await userTable.select({
       filterByFormula: `{email} = "${profile.emails[0].value}"`
     }).firstPage();
 
     if (existingUser.length > 0) {
-      // User exists, return the user
+      console.log('✅ Existing user found:', existingUser[0].fields.email);
       return done(null, existingUser[0]);
     } else {
+      console.log('👤 Creating new user for:', profile.emails[0].value);
       // Create new user
       const newUser = await userTable.create([
         {
@@ -92,9 +112,11 @@ passport.use(new GoogleStrategy({
           }
         }
       ]);
+      console.log('✅ New user created:', newUser[0].fields.email);
       return done(null, newUser[0]);
     }
   } catch (error) {
+    console.error('❌ Google OAuth error:', error);
     return done(error, null);
   }
 }));
@@ -242,23 +264,42 @@ app.get('/', (req, res) => {
 });
 
 // Google OAuth routes
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+app.get('/auth/google', (req, res, next) => {
+  console.log('🔄 Google OAuth initiated');
+  if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_google_client_id_here')) {
+    console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_not_configured`);
+  }
+  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { session: false }),
+  (req, res, next) => {
+    console.log('🔄 Google OAuth callback received');
+    passport.authenticate('google', { 
+      session: false,
+      failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_failed`
+    })(req, res, next);
+  },
   async (req, res) => {
     try {
+      if (!req.user) {
+        console.error('❌ No user data received from Google');
+        return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=no_user_data`);
+      }
+
+      console.log('✅ User authenticated successfully:', req.user.fields.email);
+      
       // Generate JWT token for the authenticated user
       const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
       
       // Redirect to frontend with token
       const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth-success?token=${token}`;
+      console.log('🔄 Redirecting to:', redirectUrl);
       res.redirect(redirectUrl);
     } catch (error) {
-      console.error('Google OAuth callback error:', error);
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+      console.error('❌ Google OAuth callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_callback_failed`);
     }
   }
 );
