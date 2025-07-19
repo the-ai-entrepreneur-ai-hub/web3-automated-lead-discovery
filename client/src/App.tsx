@@ -25,6 +25,7 @@ const MarketIntelligence = lazy(() => import("./pages/services/MarketIntelligenc
 const CompetitorAnalysis = lazy(() => import("./pages/services/CompetitorAnalysis"));
 const ContactEnrichment = lazy(() => import("./pages/services/ContactEnrichment"));
 const About = lazy(() => import("./pages/About"));
+const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
 
 // Loading component
 const PageLoader = () => (
@@ -58,6 +59,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth-success" element={<AuthSuccess />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/dashboard" element={<Dashboard />} />

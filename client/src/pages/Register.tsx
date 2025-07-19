@@ -89,7 +89,12 @@ const Register = () => {
   };
 
   const handleSocialAuth = (provider: string) => {
-    alert(`${provider} authentication is not yet implemented. Please use email/password registration for now.`);
+    if (provider === 'Google') {
+      // Redirect to Google OAuth
+      window.location.href = `${config.API_URL}/auth/google`;
+    } else {
+      alert(`${provider} authentication is not yet implemented. Please use email/password registration for now.`);
+    }
   };
 
   return (
