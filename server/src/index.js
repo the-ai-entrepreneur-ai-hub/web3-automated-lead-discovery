@@ -344,24 +344,29 @@ app.get('/debug/oauth-url', (req, res) => {
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
   console.log('🔗 Callback URL will be: https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback');
+  console.log('🌐 CLIENT_URL:', process.env.CLIENT_URL);
+  console.log('🔑 Client ID status:', !!process.env.GOOGLE_CLIENT_ID);
+  console.log('🔐 Client secret status:', !!process.env.GOOGLE_CLIENT_SECRET);
   
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_google_client_id_here')) {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_not_configured`);
+    return res.redirect(`${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/login?error=oauth_not_configured`);
   }
   
   try {
     console.log('🔧 OAuth params:', { 
       scope: ['profile', 'email'],
-      clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...'
+      clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
+      fullClientId: process.env.GOOGLE_CLIENT_ID
     });
     
+    console.log('🚀 Attempting to authenticate with Google...');
     passport.authenticate('google', { 
       scope: ['profile', 'email']
     })(req, res, next);
   } catch (error) {
     console.error('❌ Error during Google OAuth initiation:', error);
-    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_initiation_failed`);
+    res.redirect(`${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/login?error=oauth_initiation_failed`);
   }
 });
 
