@@ -444,12 +444,13 @@ app.get('/auth/google/callback',
     if (req.query.error) {
       console.error('❌ Google OAuth error in callback:', req.query.error);
       console.error('📄 Error description:', req.query.error_description);
-      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
+      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      return res.redirect(`${frontendUrl}/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
     }
     
     passport.authenticate('google', { 
       session: false,
-      failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_failed`
+      failureRedirect: `${process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app'}/login?error=oauth_failed`
     })(req, res, next);
   },
   async (req, res) => {
@@ -461,7 +462,8 @@ app.get('/auth/google/callback',
       
       if (!req.user) {
         console.error('❌ No user data received from Google');
-        return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=no_user_data`);
+        const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+        return res.redirect(`${frontendUrl}/login?error=no_user_data`);
       }
 
       console.log('✅ User authenticated successfully:', req.user.fields?.email || req.user.email);
@@ -470,18 +472,18 @@ app.get('/auth/google/callback',
       const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
       console.log('🎫 Generated JWT token for user:', req.user.id);
       
-      // Redirect to frontend with token - EMERGENCY FIX
-      // Force correct URL since Railway CLIENT_URL is wrong
-      const redirectUrl = `https://dulcet-madeleine-2018aa.netlify.app/auth-success?token=${token}`;
-      console.log('🔄 EMERGENCY REDIRECT to:', redirectUrl);
-      console.log('🌐 CLIENT_URL from env was:', process.env.CLIENT_URL);
-      console.log('🚨 OVERRIDING WRONG CLIENT_URL');
+      // Redirect to frontend with token
+      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      const redirectUrl = `${frontendUrl}/auth-success?token=${token}`;
+      console.log('🔄 Redirecting to:', redirectUrl);
+      console.log('🌐 CLIENT_URL from env:', process.env.CLIENT_URL);
       
       res.redirect(redirectUrl);
     } catch (error) {
       console.error('❌ Google OAuth callback error:', error);
       console.error('📋 Error stack:', error.stack);
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_callback_failed`);
+      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      res.redirect(`${frontendUrl}/login?error=oauth_callback_failed`);
     }
   }
 );
