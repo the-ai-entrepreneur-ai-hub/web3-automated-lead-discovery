@@ -277,7 +277,14 @@ app.get('/auth/google', (req, res, next) => {
   }
   
   try {
-    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+    console.log('🔧 OAuth params:', { 
+      scope: ['profile', 'email'],
+      clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...'
+    });
+    
+    passport.authenticate('google', { 
+      scope: ['profile', 'email']
+    })(req, res, next);
   } catch (error) {
     console.error('❌ Error during Google OAuth initiation:', error);
     res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_initiation_failed`);
