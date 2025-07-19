@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { config } from '@/lib/config';
 
@@ -64,14 +64,71 @@ const AuthSuccess = () => {
     }
   }, [navigate, searchParams]);
 
+  const [debugInfo, setDebugInfo] = useState({
+    token: '',
+    error: '',
+    step: 'initializing'
+  });
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    const error = searchParams.get('error');
+    
+    setDebugInfo({
+      token: token || 'NO TOKEN',
+      error: error || 'NO ERROR',
+      step: 'url_parsed'
+    });
+  }, [searchParams]);
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="relative w-16 h-16 mx-auto mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-pulse"></div>
-          <div className="absolute top-0 right-0 w-4 h-4 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-ping"></div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="max-w-2xl w-full">
+        <div className="text-center mb-8">
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-pulse"></div>
+            <div className="absolute top-0 right-0 w-4 h-4 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-ping"></div>
+          </div>
+          <h1 className="text-2xl font-bold mb-2">OAuth Authentication</h1>
+          <p className="text-muted-foreground">Processing your Google login...</p>
         </div>
-        <p className="text-muted-foreground">Completing authentication...</p>
+        
+        {/* Debug Information */}
+        <div className="bg-card border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Debug Information</h2>
+          <div className="space-y-2 font-mono text-sm">
+            <div><strong>Current Step:</strong> {debugInfo.step}</div>
+            <div><strong>Token Present:</strong> {debugInfo.token !== 'NO TOKEN' ? 'YES' : 'NO'}</div>
+            <div><strong>Error Present:</strong> {debugInfo.error !== 'NO ERROR' ? 'YES' : 'NO'}</div>
+            <div><strong>Current URL:</strong> {window.location.href}</div>
+            <div><strong>localStorage Check:</strong> {localStorage.getItem('token') ? 'TOKEN EXISTS' : 'NO TOKEN'}</div>
+          </div>
+        </div>
+
+        {/* Manual Navigation */}
+        <div className="bg-card border rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Manual Navigation</h2>
+          <div className="space-y-2">
+            <button 
+              onClick={() => window.location.href = '/dashboard'}
+              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90"
+            >
+              Go to Dashboard (window.location)
+            </button>
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="w-full bg-secondary text-secondary-foreground py-2 px-4 rounded hover:bg-secondary/90"
+            >
+              Go to Dashboard (navigate)
+            </button>
+            <button 
+              onClick={() => window.location.href = '/login'}
+              className="w-full bg-destructive text-destructive-foreground py-2 px-4 rounded hover:bg-destructive/90"
+            >
+              Back to Login
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

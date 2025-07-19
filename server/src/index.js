@@ -340,6 +340,54 @@ app.get('/debug/oauth-url', (req, res) => {
   });
 });
 
+// Comprehensive OAuth flow debugging endpoint
+app.get('/debug/oauth-flow', (req, res) => {
+  res.json({
+    flow_analysis: {
+      step1_initiation: {
+        endpoint: '/auth/google',
+        expected_redirect: 'https://accounts.google.com/o/oauth2/v2/auth',
+        client_id: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
+        callback_url: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback'
+      },
+      step2_google_auth: {
+        user_authorizes: 'Google handles this step',
+        google_redirects_to: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback?code=...'
+      },
+      step3_callback_processing: {
+        endpoint: '/auth/google/callback',
+        passport_exchanges_code: 'for access token',
+        creates_user_or_finds_existing: 'in Airtable',
+        generates_jwt: 'with user ID'
+      },
+      step4_frontend_redirect: {
+        backend_redirects_to: `${process.env.CLIENT_URL}/auth-success?token=...`,
+        expected_client_url: process.env.CLIENT_URL,
+        frontend_should_store_token: 'in localStorage',
+        frontend_should_redirect_to: '/dashboard'
+      },
+      potential_failure_points: [
+        'AuthSuccess component not loading',
+        'localStorage not storing token',
+        'Dashboard checking token too early',
+        'React Router navigation issues',
+        'JWT token invalid or expired',
+        'CORS/browser security blocking',
+        'Environment variable mismatch',
+        'Component timing race conditions',
+        'JavaScript errors in console',
+        'URL parameter parsing failures'
+      ],
+      debug_urls: {
+        oauth_config: '/debug/oauth',
+        oauth_manual_url: '/debug/oauth-url',
+        profile_test: '/profile (with Bearer token)',
+        direct_oauth: '/auth/google'
+      }
+    }
+  });
+});
+
 // Google OAuth routes
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
