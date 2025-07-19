@@ -7,8 +7,13 @@ const AuthSuccess = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    console.log('🔍 AuthSuccess: Processing authentication...');
+    
     const token = searchParams.get('token');
     const error = searchParams.get('error');
+    
+    console.log('🎫 Token received:', token ? 'YES' : 'NO');
+    console.log('❌ Error received:', error || 'NONE');
 
     if (error) {
       // Handle OAuth error
@@ -18,8 +23,12 @@ const AuthSuccess = () => {
     }
 
     if (token) {
+      console.log('💾 Storing token in localStorage...');
       // Store token and redirect to dashboard
       localStorage.setItem('token', token);
+      
+      console.log('📡 Fetching user profile data...');
+      console.log('🔗 API URL:', config.API_URL);
       
       // Fetch user data
       fetch(`${config.API_URL}/profile`, {
@@ -27,17 +36,32 @@ const AuthSuccess = () => {
           'Authorization': `Bearer ${token}`
         }
       })
-        .then(response => response.json())
+        .then(response => {
+          console.log('📥 Profile response status:', response.status);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          return response.json();
+        })
         .then(userData => {
+          console.log('✅ User data received:', userData);
           localStorage.setItem('user', JSON.stringify(userData));
-          navigate('/dashboard');
+          console.log('🔄 Redirecting to dashboard...');
+          // Small delay to ensure localStorage is updated
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         })
         .catch(error => {
-          console.error('Error fetching user data:', error);
+          console.error('❌ Error fetching user data:', error);
+          console.log('🔄 Redirecting to dashboard anyway...');
           // Still redirect to dashboard, user data will be fetched there
-          navigate('/dashboard');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         });
     } else {
+      console.error('❌ No token found in URL parameters');
       // No token found, redirect to login
       navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
     }
