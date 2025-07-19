@@ -400,7 +400,7 @@ app.get('/auth/google', (req, res, next) => {
   
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_')) {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
-    return res.redirect(`${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/login?error=oauth_not_configured`);
+    return res.redirect(`${process.env.CLIENT_URL || 'https://web3-prospector.netlify.app'}/login?error=oauth_not_configured`);
   }
   
   try {
@@ -416,7 +416,7 @@ app.get('/auth/google', (req, res, next) => {
     })(req, res, next);
   } catch (error) {
     console.error('❌ Error during Google OAuth initiation:', error);
-    res.redirect(`${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/login?error=oauth_initiation_failed`);
+    res.redirect(`${process.env.CLIENT_URL || 'https://web3-prospector.netlify.app'}/login?error=oauth_initiation_failed`);
   }
 });
 
