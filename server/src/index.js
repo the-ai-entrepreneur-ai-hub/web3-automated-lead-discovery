@@ -296,6 +296,28 @@ app.get('/debug/oauth', (req, res) => {
   });
 });
 
+// Test endpoint to manually generate OAuth URL
+app.get('/debug/oauth-url', (req, res) => {
+  const baseUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback',
+    response_type: 'code',
+    scope: 'profile email',
+    access_type: 'offline',
+    prompt: 'consent'
+  });
+  
+  const oauthUrl = `${baseUrl}?${params.toString()}`;
+  
+  res.json({
+    message: 'Manual OAuth URL for testing',
+    oauthUrl: oauthUrl,
+    params: Object.fromEntries(params.entries()),
+    instructions: 'Copy the oauthUrl and paste it in your browser to test Google OAuth directly'
+  });
+});
+
 // Google OAuth routes
 app.get('/auth/google', (req, res, next) => {
   console.log('🔄 Google OAuth initiated');
@@ -324,6 +346,16 @@ app.get('/auth/google', (req, res, next) => {
 app.get('/auth/google/callback',
   (req, res, next) => {
     console.log('🔄 Google OAuth callback received');
+    console.log('📥 Callback query params:', req.query);
+    console.log('📋 Callback URL called:', req.url);
+    
+    // Check for error in callback
+    if (req.query.error) {
+      console.error('❌ Google OAuth error in callback:', req.query.error);
+      console.error('📄 Error description:', req.query.error_description);
+      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
+    }
+    
     passport.authenticate('google', { 
       session: false,
       failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=oauth_failed`
