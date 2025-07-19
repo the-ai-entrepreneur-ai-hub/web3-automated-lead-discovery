@@ -282,12 +282,17 @@ app.get('/debug/oauth', (req, res) => {
   res.json({
     hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
     hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    fullClientId: process.env.GOOGLE_CLIENT_ID,
     clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
     callbackUrl: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback',
     detectedUrl: `${req.protocol}://${req.get('host')}/auth/google/callback`,
     isConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     trustProxy: app.get('trust proxy'),
-    headers: req.headers
+    googleConsoleInstructions: {
+      clientIdToFind: process.env.GOOGLE_CLIENT_ID,
+      redirectUriToAdd: 'https://web3-automated-lead-discovery-production.up.railway.app/auth/google/callback',
+      consoleUrl: 'https://console.cloud.google.com/apis/credentials'
+    }
   });
 });
 
