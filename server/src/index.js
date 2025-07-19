@@ -112,22 +112,44 @@ passport.use(new GoogleStrategy({
       return done(null, existingUser[0]);
     } else {
       console.log('👤 Creating new user for:', profile.emails[0].value);
-      // Create new user
-      const newUser = await userTable.create([
-        {
-          fields: {
-            email: profile.emails[0].value,
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName,
-            company: '', // Will be filled later
-            tier: 'free',
-            isVerified: true, // Google accounts are pre-verified
-            googleId: profile.id
+      
+      // Prepare user fields (excluding googleId if field doesn't exist)
+      const userFields = {
+        email: profile.emails[0].value,
+        firstName: profile.name.givenName,
+        lastName: profile.name.familyName,
+        company: '', // Will be filled later
+        tier: 'free',
+        isVerified: true // Google accounts are pre-verified
+      };
+      
+      // Try to add googleId, but handle case where field doesn't exist
+      try {
+        const newUser = await userTable.create([
+          {
+            fields: {
+              ...userFields,
+              googleId: profile.id
+            }
           }
+        ]);
+        console.log('✅ New user created with googleId:', newUser[0].fields.email);
+        return done(null, newUser[0]);
+      } catch (googleIdError) {
+        if (googleIdError.message.includes('googleId')) {
+          console.log('⚠️ googleId field not found in Airtable, creating user without it');
+          // Create user without googleId field
+          const newUser = await userTable.create([
+            {
+              fields: userFields
+            }
+          ]);
+          console.log('✅ New user created without googleId:', newUser[0].fields.email);
+          return done(null, newUser[0]);
+        } else {
+          throw googleIdError;
         }
-      ]);
-      console.log('✅ New user created:', newUser[0].fields.email);
-      return done(null, newUser[0]);
+      }
     }
   } catch (error) {
     console.error('❌ Google OAuth error:', error);
