@@ -470,10 +470,12 @@ app.get('/auth/google/callback',
       const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
       console.log('🎫 Generated JWT token for user:', req.user.id);
       
-      // Redirect to frontend with token
-      const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth-success?token=${token}`;
-      console.log('🔄 Redirecting to:', redirectUrl);
-      console.log('🌐 CLIENT_URL from env:', process.env.CLIENT_URL);
+      // Redirect to frontend with token - EMERGENCY FIX
+      // Force correct URL since Railway CLIENT_URL is wrong
+      const redirectUrl = `https://dulcet-madeleine-2018aa.netlify.app/auth-success?token=${token}`;
+      console.log('🔄 EMERGENCY REDIRECT to:', redirectUrl);
+      console.log('🌐 CLIENT_URL from env was:', process.env.CLIENT_URL);
+      console.log('🚨 OVERRIDING WRONG CLIENT_URL');
       
       res.redirect(redirectUrl);
     } catch (error) {
