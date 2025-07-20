@@ -1,68 +1,103 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { config } from '@/lib/config';
 
 const AuthSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [status, setStatus] = useState('Processing authentication...');
 
   useEffect(() => {
-    console.log('🔍 AuthSuccess: Processing authentication...');
-    console.log('🌐 Current URL:', window.location.href);
-    console.log('🔗 Search params:', window.location.search);
-    console.log('📍 Hash:', window.location.hash);
-    
-    // Extract token directly from URL to handle double slash issues
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token') || searchParams.get('token');
-    const error = urlParams.get('error') || searchParams.get('error');
-    
-    console.log('🎫 Token received:', token ? 'YES' : 'NO');
-    console.log('🎫 Token value:', token);
-    console.log('❌ Error received:', error || 'NONE');
-    console.log('🔍 URL search params:', Object.fromEntries(urlParams.entries()));
-    console.log('🔍 React Router params:', Object.fromEntries(searchParams.entries()));
-
-    if (error) {
-      console.error('OAuth error:', error);
-      navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
-      return;
-    }
-
-    if (token) {
-      console.log('💾 Storing token and redirecting to dashboard...');
-      localStorage.setItem('token', token);
-      console.log('✅ Token stored in localStorage');
-      
-      // Longer delay to ensure localStorage is properly set before Dashboard checks
-      setTimeout(() => {
-        const storedToken = localStorage.getItem('token');
-        console.log('🔍 Verifying token storage:', storedToken ? 'SUCCESS' : 'FAILED');
-        console.log('🔄 Executing redirect to /dashboard');
+    const processAuthentication = async () => {
+      try {
+        console.log('🔍 AuthSuccess: Processing authentication...');
+        setStatus('Processing authentication...');
         
-        // Try React Router navigation first
-        try {
-          navigate('/dashboard', { replace: true });
-          console.log('✅ React Router navigation attempted');
-        } catch (navError) {
-          console.error('❌ React Router navigation failed:', navError);
+        // Extract token from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token') || searchParams.get('token');
+        const error = urlParams.get('error') || searchParams.get('error');
+        
+        console.log('🎫 Token received:', token ? 'YES' : 'NO');
+        console.log('❌ Error received:', error || 'NONE');
+
+        if (error) {
+          console.error('OAuth error:', error);
+          setStatus('Authentication failed. Redirecting...');
+          setTimeout(() => {
+            navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
+          }, 1000);
+          return;
         }
+
+        if (!token) {
+          console.error('❌ No token found in URL parameters');
+          setStatus('No authentication token found. Redirecting...');
+          setTimeout(() => {
+            navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
+          }, 1000);
+          return;
+        }
+
+        // Validate token format (basic check)
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          console.error('❌ Invalid token format');
+          setStatus('Invalid authentication token. Redirecting...');
+          setTimeout(() => {
+            navigate('/login?error=' + encodeURIComponent('Invalid authentication token.'));
+          }, 1000);
+          return;
+        }
+
+        console.log('💾 Storing token and fetching user data...');
+        setStatus('Storing authentication token...');
         
-        // Immediate fallback: Force redirect with window.location
+        // Store token immediately
+        localStorage.setItem('token', token);
+        
+        // Fetch user data to validate token and populate user info
+        setStatus('Fetching user profile...');
+        try {
+          const response = await fetch(`${config.API_URL}/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ User data stored:', userData);
+            setStatus('Authentication successful! Redirecting to dashboard...');
+            
+            // Wait a moment then redirect
+            setTimeout(() => {
+              navigate('/dashboard', { replace: true });
+            }, 500);
+          } else {
+            throw new Error('Failed to fetch user profile');
+          }
+        } catch (profileError) {
+          console.error('❌ Failed to fetch user profile:', profileError);
+          setStatus('Authentication successful! Redirecting to dashboard...');
+          
+          // Even if profile fetch fails, redirect to dashboard with token
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 500);
+        }
+      } catch (error) {
+        console.error('❌ Authentication processing error:', error);
+        setStatus('Authentication error. Redirecting...');
         setTimeout(() => {
-          console.log('🔄 Fallback: Using window.location redirect to #/dashboard');
-          window.location.hash = '/dashboard';
-        }, 100);
-      }, 200);
-    } else {
-      console.error('❌ No token found in URL parameters');
-      console.error('🔍 URL breakdown:', {
-        href: window.location.href,
-        search: window.location.search,
-        hash: window.location.hash,
-        pathname: window.location.pathname
-      });
-      navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
-    }
+          navigate('/login?error=' + encodeURIComponent('Authentication processing failed.'));
+        }, 1000);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    processAuthentication();
   }, [navigate, searchParams]);
 
   return (
@@ -72,8 +107,10 @@ const AuthSuccess = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-pulse"></div>
           <div className="absolute top-0 right-0 w-4 h-4 bg-gradient-to-br from-primary to-primary/80 rounded-full animate-ping"></div>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Authentication Successful</h1>
-        <p className="text-muted-foreground">Redirecting to your dashboard...</p>
+        <h1 className="text-2xl font-bold mb-2">
+          {isProcessing ? 'Processing...' : 'Authentication Successful'}
+        </h1>
+        <p className="text-muted-foreground">{status}</p>
       </div>
     </div>
   );
