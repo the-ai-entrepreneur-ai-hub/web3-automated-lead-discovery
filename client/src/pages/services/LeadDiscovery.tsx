@@ -122,7 +122,7 @@ const LeadDiscovery = () => {
               className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg"
               onClick={() => navigate('/register')}
             >
-              Start Free Trial
+              Get Started Today
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button 
@@ -293,7 +293,7 @@ const LeadDiscovery = () => {
               className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg"
               onClick={() => navigate('/register')}
             >
-              Start Free Trial
+              Get Started Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
@@ -305,7 +305,7 @@ const LeadDiscovery = () => {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            7-day free trial • No credit card required • Cancel anytime
+            Premium access • Cancel anytime • Secure payment
           </p>
         </div>
       </main>
