@@ -338,7 +338,22 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.get('/', (req, res) => {
-  res.send('Hello from the Web3 Prospector server!');
+  res.json({
+    status: 'healthy',
+    message: 'Web3 Prospector server is running',
+    timestamp: new Date().toISOString(),
+    oauth_configured: isOAuthConfigValid,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Debug endpoint to check OAuth configuration
@@ -1620,6 +1635,35 @@ setInterval(cleanupExpiredVerificationCodes, 30 * 60 * 1000);
 // Run cleanup on startup
 cleanupExpiredVerificationCodes();
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
+  console.log('🚀 Server started successfully');
+});
+
+// Graceful shutdown handling for Railway
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT received, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
+});
+
+// Keep the process alive and handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
