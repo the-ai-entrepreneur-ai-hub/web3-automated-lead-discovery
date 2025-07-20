@@ -31,7 +31,7 @@ const STRIPE_CONFIG = {
   MONTHLY_PRICE: 9900, // $99.00 in cents
   SUCCESS_URL: `${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/#/dashboard?payment=success`,
   CANCEL_URL: `${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/#/dashboard?payment=canceled`,
-  FREE_TRIAL_DAYS: 7, // 7-day free trial
+  FREE_TRIAL_DAYS: 14, // 14-day free trial
   DISCOUNT_CODES: {
     'ProspectingGOAT12': {
       percentage: 70,

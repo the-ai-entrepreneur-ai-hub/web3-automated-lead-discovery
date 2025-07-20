@@ -14,6 +14,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showGoogleTerms, setShowGoogleTerms] = useState(false);
   const [googleTermsAccepted, setGoogleTermsAccepted] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<'Google' | 'Twitter'>('Google');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -68,8 +69,10 @@ const Login = () => {
 
   const handleSocialAuth = (provider: string) => {
     if (provider === 'Google') {
-      // For existing users logging in, check if they need to accept terms
-      // (This mainly applies to new users coming from login page)
+      setSelectedProvider('Google');
+      setShowGoogleTerms(true);
+    } else if (provider === 'Twitter') {
+      setSelectedProvider('Twitter');
       setShowGoogleTerms(true);
     } else {
       alert(`${provider} authentication is not yet implemented. Please use email/password login for now.`);
@@ -78,7 +81,7 @@ const Login = () => {
 
   const handleGoogleOAuthProceed = () => {
     if (!googleTermsAccepted) {
-      setError("You must accept the Terms of Service and Privacy Policy to continue with Google authentication.");
+      setError(`You must accept the Terms of Service and Privacy Policy to continue with ${selectedProvider} authentication.`);
       return;
     }
     
@@ -91,13 +94,17 @@ const Login = () => {
       sessionStorage.setItem('termsAccepted', 'true');
       sessionStorage.setItem('authFlow', 'login');
       
-      // Redirect to Google OAuth
-      console.log('🔄 Initiating Google OAuth...');
-      console.log('🌐 OAuth URL:', `${config.API_URL}/auth/google`);
-      window.location.href = `${config.API_URL}/auth/google`;
+      // Redirect to appropriate OAuth provider
+      const authUrl = selectedProvider === 'Google' 
+        ? `${config.API_URL}/auth/google`
+        : `${config.API_URL}/auth/twitter`;
+      
+      console.log(`🔄 Initiating ${selectedProvider} OAuth...`);
+      console.log('🌐 OAuth URL:', authUrl);
+      window.location.href = authUrl;
     } catch (error) {
-      console.error('❌ Error initiating Google OAuth:', error);
-      setError('Failed to initialize Google authentication. Please try again.');
+      console.error(`❌ Error initiating ${selectedProvider} OAuth:`, error);
+      setError(`Failed to initialize ${selectedProvider} authentication. Please try again.`);
       setIsLoading(false);
     }
   };
@@ -212,7 +219,7 @@ const Login = () => {
           <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Terms and Conditions</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Before continuing with Google authentication, you must accept our Terms of Service and Privacy Policy.
+              Before continuing with {selectedProvider} authentication, you must accept our Terms of Service and Privacy Policy.
             </p>
             <div className="flex items-start space-x-2 mb-6">
               <input 
@@ -245,7 +252,7 @@ const Login = () => {
                 disabled={!googleTermsAccepted}
                 className="flex-1"
               >
-                Continue with Google
+                Continue with {selectedProvider}
               </Button>
             </div>
           </div>
