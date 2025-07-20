@@ -482,8 +482,15 @@ app.get('/auth/google/callback',
       let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
       console.log('🌐 Raw CLIENT_URL from env:', JSON.stringify(process.env.CLIENT_URL));
       console.log('🔧 Before cleanup:', JSON.stringify(frontendUrl));
-      // Remove trailing slashes
-      frontendUrl = frontendUrl.replace(/\/+$/, '');
+      
+      // More aggressive cleanup - remove all trailing slashes
+      frontendUrl = frontendUrl.replace(/\/+$/, '').trim();
+      
+      // Ensure we have a clean URL without trailing slash
+      if (frontendUrl.endsWith('/')) {
+        frontendUrl = frontendUrl.slice(0, -1);
+      }
+      
       console.log('🔧 After cleanup:', JSON.stringify(frontendUrl));
       const redirectUrl = `${frontendUrl}/auth-success?token=${token}`;
       console.log('🔄 Final redirect URL:', redirectUrl);
