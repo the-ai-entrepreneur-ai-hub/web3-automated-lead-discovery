@@ -68,9 +68,14 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
       if (result.valid) {
         setDiscountInfo(result);
         setError(null);
+        // Store valid discount code for use in all upgrade buttons
+        localStorage.setItem('appliedDiscountCode', discountCode.trim());
+        console.log('✅ Discount code stored for global use:', discountCode.trim());
       } else {
         setDiscountInfo(null);
         setError(result.message || 'Invalid discount code');
+        // Remove invalid discount code
+        localStorage.removeItem('appliedDiscountCode');
       }
     } catch (err) {
       console.error('Error validating discount code:', err);
