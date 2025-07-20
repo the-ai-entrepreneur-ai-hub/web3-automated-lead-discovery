@@ -387,6 +387,63 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
         }
         break;
       
+      case 'customer.subscription.created':
+        const newSubscription = event.data.object;
+        console.log(`🆕 New subscription created: ${newSubscription.id} - Status: ${newSubscription.status}`);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeCustomerId} = "${newSubscription.customer}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            // For trial subscriptions, set tier to paid immediately (trial access)
+            const isTrialing = newSubscription.status === 'trialing';
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  tier: 'paid', // Give access during trial
+                  stripeSubscriptionId: newSubscription.id,
+                  subscriptionStatus: newSubscription.status,
+                  trialEnd: isTrialing ? new Date(newSubscription.trial_end * 1000).toISOString() : null
+                }
+              }
+            ]);
+            console.log(`✅ User subscription created ${isTrialing ? '(trialing)' : '(active)'}: ${users[0].fields.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error handling subscription creation:', error);
+        }
+        break;
+      
+      case 'invoice.payment_succeeded':
+        const paidInvoice = event.data.object;
+        console.log(`💰 Payment succeeded for invoice: ${paidInvoice.id}`);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeCustomerId} = "${paidInvoice.customer}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  tier: 'paid',
+                  subscriptionStatus: 'active',
+                  lastPaymentDate: new Date().toISOString()
+                }
+              }
+            ]);
+            console.log(`✅ User payment succeeded (trial converted): ${users[0].fields.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error handling payment success:', error);
+        }
+        break;
+      
       default:
         console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
@@ -1556,34 +1613,43 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     
     console.log(`🏷️ Using ${STRIPE_CONFIG.PRICE_ID ? 'existing Price ID' : 'dynamic pricing'}: $${STRIPE_CONFIG.MONTHLY_PRICE / 100}/month`);
 
-    // Apply discount code if provided
-    if (discountCode && STRIPE_CONFIG.DISCOUNT_CODES[discountCode]) {
-      try {
-        // Create or retrieve discount coupon
-        let coupon;
+    // Apply discount code if provided (case-insensitive)
+    if (discountCode) {
+      const normalizedCode = discountCode.toUpperCase();
+      const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
+        code => code.toUpperCase() === normalizedCode
+      );
+      
+      if (configCode) {
         try {
-          coupon = await stripe.coupons.retrieve(discountCode);
-          console.log(`🏷️ Retrieved existing coupon: ${discountCode}`);
-        } catch (couponError) {
-          // Create new coupon if it doesn't exist
-          const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[discountCode];
+          // Create or retrieve discount coupon
+          let coupon;
+          try {
+            coupon = await stripe.coupons.retrieve(configCode);
+            console.log(`🏷️ Retrieved existing coupon: ${configCode}`);
+          } catch (couponError) {
+            // Create new coupon if it doesn't exist
+            const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[configCode];
           coupon = await stripe.coupons.create({
-            id: discountCode,
+            id: configCode,
             percent_off: discountInfo.percentage,
             duration: discountInfo.duration,
             name: discountInfo.description,
           });
-          console.log(`✨ Created new coupon: ${discountCode}`);
+          console.log(`✨ Created new coupon: ${configCode}`);
         }
 
         sessionConfig.discounts = [{
           coupon: coupon.id,
         }];
         
-        console.log(`🏷️ Applied discount code: ${discountCode} (${coupon.percent_off}% off)`);
-      } catch (couponError) {
-        console.error('❌ Error applying discount code:', couponError);
-        return res.status(400).json({ error: 'Invalid discount code' });
+        console.log(`🏷️ Applied discount code: ${configCode} (${coupon.percent_off}% off)`);
+        } catch (couponError) {
+          console.error('❌ Error applying discount code:', couponError);
+          return res.status(400).json({ error: 'Invalid discount code' });
+        }
+      } else {
+        console.log(`❌ Invalid discount code provided: ${discountCode}`);
       }
     }
 
@@ -1625,9 +1691,14 @@ app.post('/validate-discount-code', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Discount code is required' });
     }
 
-    // Check if discount code exists in our configuration
-    if (STRIPE_CONFIG.DISCOUNT_CODES[discountCode]) {
-      const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[discountCode];
+    // Check if discount code exists in our configuration (case-insensitive)
+    const normalizedCode = discountCode.toUpperCase();
+    const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
+      code => code.toUpperCase() === normalizedCode
+    );
+    
+    if (configCode) {
+      const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[configCode];
       return res.json({
         valid: true,
         percentage: discountInfo.percentage,
