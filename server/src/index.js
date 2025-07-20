@@ -159,7 +159,9 @@ if (isOAuthConfigValid) {
         lastName: profile.name.familyName,
         company: '', // Will be filled later
         tier: 'free',
-        isVerified: true // Google accounts are pre-verified
+        isVerified: true, // Google accounts are pre-verified
+        termsAccepted: true,
+        termsAcceptedDate: new Date().toISOString()
       };
       
       // Try to add googleId, but handle case where field doesn't exist
@@ -582,11 +584,16 @@ app.get('/auth/google/callback',
 
 // Registration endpoint - Step 1: Send verification code
 app.post('/register', async (req, res) => {
-  const { email, password, firstName, lastName, company } = req.body;
+  const { email, password, firstName, lastName, company, acceptTerms } = req.body;
   
   // Validate required fields
   if (!email || !password || !firstName || !lastName || !company) {
     return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Validate terms acceptance
+  if (!acceptTerms) {
+    return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy to create an account' });
   }
 
   // Validate email format
@@ -637,6 +644,7 @@ app.post('/register', async (req, res) => {
               firstName,
               lastName,
               company,
+              acceptTerms,
               timestamp: new Date()
             })
           }
@@ -661,6 +669,7 @@ app.post('/register', async (req, res) => {
         firstName,
         lastName,
         company,
+        acceptTerms,
         verificationCode: verificationResult.verificationCode,
         expiryTime: verificationResult.expiryTime,
         timestamp: new Date()
@@ -753,7 +762,9 @@ app.post('/verify-email', async (req, res) => {
             firstName: pendingReg.firstName,
             lastName: pendingReg.lastName,
             company: pendingReg.company,
-            isVerified: true
+            isVerified: true,
+            termsAccepted: pendingReg.acceptTerms,
+            termsAcceptedDate: new Date().toISOString()
           }
         }
       ]);
@@ -827,6 +838,8 @@ app.post('/verify-email', async (req, res) => {
           lastName: pendingData.lastName,
           company: pendingData.company,
           isVerified: true,
+          termsAccepted: pendingData.acceptTerms,
+          termsAcceptedDate: new Date().toISOString(),
           verificationCode: '', // Clear the verification code
           verificationCodeExpiry: null,
           pendingRegistration: '' // Clear pending data
