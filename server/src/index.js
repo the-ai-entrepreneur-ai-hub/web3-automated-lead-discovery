@@ -1028,13 +1028,15 @@ app.get('/auth/twitter', (req, res, next) => {
   try {
     console.log('🔧 Twitter OAuth params:', { 
       includeEmail: true,
-      clientId: process.env.TWITTER_CLIENT_ID?.substring(0, 20) + '...'
+      clientId: process.env.TWITTER_CLIENT_ID?.substring(0, 20) + '...',
+      callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`
     });
     
     console.log('🚀 Attempting to authenticate with Twitter...');
     passport.authenticate('twitter')(req, res, next);
   } catch (error) {
     console.error('❌ Error during Twitter OAuth initiation:', error);
+    console.error('📋 Full error:', error);
     let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
     frontendUrl = frontendUrl.replace(/\/+$/, '');
     res.redirect(`${frontendUrl}/#/login?error=twitter_oauth_initiation_failed`);
