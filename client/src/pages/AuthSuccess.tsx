@@ -40,13 +40,18 @@ const AuthSuccess = () => {
         console.log('🔄 Executing redirect to /dashboard');
         
         // Try React Router navigation first
-        navigate('/dashboard', { replace: true });
+        try {
+          navigate('/dashboard', { replace: true });
+          console.log('✅ React Router navigation attempted');
+        } catch (navError) {
+          console.error('❌ React Router navigation failed:', navError);
+        }
         
-        // Fallback: Force redirect with window.location after a short delay
+        // Immediate fallback: Force redirect with window.location
         setTimeout(() => {
-          console.log('🔄 Fallback: Using window.location redirect');
-          window.location.href = '#/dashboard';
-        }, 500);
+          console.log('🔄 Fallback: Using window.location redirect to #/dashboard');
+          window.location.hash = '/dashboard';
+        }, 100);
       }, 200);
     } else {
       console.error('❌ No token found in URL parameters');
