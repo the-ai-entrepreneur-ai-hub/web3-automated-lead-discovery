@@ -267,8 +267,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           // Always set tier to paid for completed checkouts (trial or paid)
           let subscriptionUpdate = {
             tier: 'paid', // Always upgrade for completed checkout
-            subscriptionStatus: 'active', // Default to active
-            lastPaymentDate: new Date().toISOString()
+            subscriptionStatus: 'active' // Default to active
+            // Removed lastPaymentDate until Airtable field is configured properly
           };
           
           // Get detailed subscription info if available
@@ -287,8 +287,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
               subscriptionUpdate = {
                 tier: 'paid', // Always paid for any subscription
                 subscriptionStatus: subscription.status,
-                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
-                lastPaymentDate: new Date().toISOString()
+                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+                // Removed lastPaymentDate until Airtable field is configured properly
               };
               console.log(`📝 Subscription update object:`, subscriptionUpdate);
             } catch (subError) {
@@ -1720,6 +1720,21 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'User already has active subscription' });
     }
     
+    // Determine if this is a new trial or payment after trial ended
+    const isNewUser = !user.fields.stripeSubscriptionId;
+    const hasExpiredTrial = user.fields.trialEnd && new Date(user.fields.trialEnd) < new Date();
+    const isTrialUser = user.fields.subscriptionStatus === 'trialing';
+    const isPaymentAfterTrial = hasExpiredTrial || (user.fields.subscriptionStatus && !['active', 'trialing'].includes(user.fields.subscriptionStatus));
+    
+    console.log('🔍 Checkout scenario analysis:', {
+      isNewUser,
+      hasExpiredTrial,
+      isTrialUser,
+      isPaymentAfterTrial,
+      trialEnd: user.fields.trialEnd,
+      subscriptionStatus: user.fields.subscriptionStatus
+    });
+    
     // Create or get existing Stripe customer
     let customerId = user.fields.stripeCustomerId || null;
     if (!customerId) {
@@ -1782,8 +1797,8 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
         firstName: user.fields.firstName || '',
         lastName: user.fields.lastName || '',
       },
-      // Only add subscription_data if we have trial days
-      ...(STRIPE_CONFIG.FREE_TRIAL_DAYS && STRIPE_CONFIG.FREE_TRIAL_DAYS > 0 ? {
+      // Only add trial for new users, not for users paying after trial ended
+      ...(isNewUser && STRIPE_CONFIG.FREE_TRIAL_DAYS && STRIPE_CONFIG.FREE_TRIAL_DAYS > 0 ? {
         subscription_data: {
           trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS,
         }
@@ -1851,7 +1866,12 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     res.json({ 
       url: session.url,
       sessionId: session.id,
-      success: true 
+      success: true,
+      scenario: isNewUser ? 'trial' : 'payment',
+      trialDays: isNewUser ? STRIPE_CONFIG.FREE_TRIAL_DAYS : 0,
+      amount: STRIPE_CONFIG.MONTHLY_PRICE / 100,
+      currency: STRIPE_CONFIG.CURRENCY.toUpperCase(),
+      hasDiscount: !!discountCode
     });
   } catch (error) {
     console.error('❌ Error creating checkout session:', error);
@@ -2047,6 +2067,87 @@ setInterval(cleanupExpiredVerificationCodes, 30 * 60 * 1000);
 
 // Run cleanup on startup
 cleanupExpiredVerificationCodes();
+
+// Background job to monitor trial expirations
+const checkTrialExpirations = async () => {
+  try {
+    console.log('🔍 Checking for expired trials...');
+    
+    // Get all users with trial subscriptions that might have expired
+    const users = await userTable.select({
+      filterByFormula: `AND(
+        {subscriptionStatus} = 'trialing',
+        {trialEnd} != '',
+        {tier} = 'paid'
+      )`
+    }).firstPage();
+    
+    console.log(`📋 Found ${users.length} trialing users to check`);
+    
+    const now = new Date();
+    let expiredCount = 0;
+    
+    for (const user of users) {
+      if (user.fields.trialEnd) {
+        const trialEndDate = new Date(user.fields.trialEnd);
+        
+        if (trialEndDate < now) {
+          console.log(`⏰ Trial expired for user: ${user.fields.email} (ended: ${trialEndDate.toISOString()})`);
+          
+          try {
+            // Check subscription status in Stripe to confirm
+            if (user.fields.stripeSubscriptionId) {
+              const subscription = await stripe.subscriptions.retrieve(user.fields.stripeSubscriptionId);
+              console.log(`📋 Stripe subscription status: ${subscription.status}`);
+              
+              // If subscription is past_due, canceled, or incomplete_expired, downgrade user
+              if (['past_due', 'canceled', 'incomplete_expired', 'unpaid'].includes(subscription.status)) {
+                await userTable.update([{
+                  id: user.id,
+                  fields: {
+                    tier: 'free',
+                    subscriptionStatus: subscription.status
+                  }
+                }]);
+                
+                console.log(`⬇️ Downgraded user ${user.fields.email} to free tier (trial expired, payment failed)`);
+                expiredCount++;
+              }
+            } else {
+              // No Stripe subscription ID, safe to downgrade
+              await userTable.update([{
+                id: user.id,
+                fields: {
+                  tier: 'free',
+                  subscriptionStatus: 'expired'
+                }
+              }]);
+              
+              console.log(`⬇️ Downgraded user ${user.fields.email} to free tier (trial expired, no subscription)`);
+              expiredCount++;
+            }
+          } catch (stripeError) {
+            console.error(`❌ Error checking subscription for user ${user.fields.email}:`, stripeError);
+          }
+        }
+      }
+    }
+    
+    if (expiredCount > 0) {
+      console.log(`✅ Processed ${expiredCount} expired trials`);
+    } else {
+      console.log('✅ No expired trials found');
+    }
+  } catch (error) {
+    console.error('❌ Error checking trial expirations:', error);
+  }
+};
+
+// Run trial expiration check every hour
+setInterval(checkTrialExpirations, 60 * 60 * 1000);
+
+// Run trial expiration check on startup (after 30 seconds delay)
+setTimeout(checkTrialExpirations, 30 * 1000);
 
 // Test endpoint for debugging tier field issues
 app.get('/debug-tier', authenticateToken, async (req, res) => {

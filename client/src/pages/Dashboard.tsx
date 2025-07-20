@@ -43,6 +43,7 @@ const Dashboard = () => {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [activeDiscountCode, setActiveDiscountCode] = useState<string | null>(null);
+  const [trialInfo, setTrialInfo] = useState<{daysLeft: number; isExpiring: boolean} | null>(null);
   const navigate = useNavigate();
 
   // Check for payment status in URL and active discount code
@@ -78,6 +79,19 @@ const Dashboard = () => {
     try {
       const data = await stripeApi.getSubscriptionStatus(token);
       setSubscriptionData(data);
+      
+      // Check trial status if user is on trial
+      if (data.subscriptionStatus === 'trialing' && data.trialEnd) {
+        const trialEndDate = new Date(data.trialEnd);
+        const now = new Date();
+        const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const isExpiring = daysLeft <= 2; // Show warning if 2 days or less
+        
+        setTrialInfo({ daysLeft, isExpiring });
+        console.log('🗓️ Trial info:', { daysLeft, isExpiring, trialEnd: data.trialEnd });
+      } else {
+        setTrialInfo(null);
+      }
       
       // Update user data in localStorage if tier changed
       const storedUser = localStorage.getItem('user');
@@ -315,6 +329,12 @@ const Dashboard = () => {
       
       if (response.success && response.url) {
         console.log('🔄 Redirecting to Stripe checkout:', response.url);
+        console.log('💳 Checkout details:', {
+          scenario: response.scenario,
+          amount: response.amount,
+          trialDays: response.trialDays,
+          hasDiscount: response.hasDiscount
+        });
         window.location.href = response.url;
       } else {
         throw new Error(response.error || 'Failed to get checkout URL');
@@ -408,6 +428,33 @@ const Dashboard = () => {
             >
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Trial Expiration Warning */}
+      {trialInfo && trialInfo.isExpiring && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">⏰</span>
+                <div>
+                  <div className="font-bold text-lg">
+                    Trial Ending {trialInfo.daysLeft === 0 ? 'Today' : `in ${trialInfo.daysLeft} day${trialInfo.daysLeft === 1 ? '' : 's'}`}!
+                  </div>
+                  <div className="text-sm opacity-90">
+                    Upgrade now to keep access to premium features
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={handleUpgrade}
+                className="bg-white text-orange-600 hover:bg-orange-50 font-semibold"
+              >
+                Upgrade Now - $99/month
+              </Button>
+            </div>
           </div>
         </div>
       )}
