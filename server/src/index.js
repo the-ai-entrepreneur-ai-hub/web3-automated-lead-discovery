@@ -477,7 +477,7 @@ app.get('/auth/google', (req, res, next) => {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
     let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
     frontendUrl = frontendUrl.replace(/\/+$/, '');
-    return res.redirect(`${frontendUrl}/login?error=oauth_not_configured`);
+    return res.redirect(`${frontendUrl}/#/login?error=oauth_not_configured`);
   }
   
   try {
@@ -495,7 +495,7 @@ app.get('/auth/google', (req, res, next) => {
     console.error('❌ Error during Google OAuth initiation:', error);
     let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
     frontendUrl = frontendUrl.replace(/\/+$/, '');
-    res.redirect(`${frontendUrl}/login?error=oauth_initiation_failed`);
+    res.redirect(`${frontendUrl}/#/login?error=oauth_initiation_failed`);
   }
 });
 
@@ -511,12 +511,12 @@ app.get('/auth/google/callback',
       console.error('📄 Error description:', req.query.error_description);
       let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
       frontendUrl = frontendUrl.replace(/\/+$/, '');
-      return res.redirect(`${frontendUrl}/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
+      return res.redirect(`${frontendUrl}/#/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
     }
     
     passport.authenticate('google', { 
       session: false,
-      failureRedirect: `${(process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app').replace(/\/+$/, '')}/login?error=oauth_failed`
+      failureRedirect: `${(process.env.CLIENT_URL || 'https://rawfreedomai.com').replace(/\/+$/, '')}/#/login?error=oauth_failed`
     })(req, res, next);
   },
   async (req, res) => {
@@ -530,7 +530,7 @@ app.get('/auth/google/callback',
         console.error('❌ No user data received from Google');
         let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
         frontendUrl = frontendUrl.replace(/\/+$/, '');
-        return res.redirect(`${frontendUrl}/login?error=no_user_data`);
+        return res.redirect(`${frontendUrl}/#/login?error=no_user_data`);
       }
 
       console.log('✅ User authenticated successfully:', req.user.fields?.email || req.user.email);
@@ -565,8 +565,9 @@ app.get('/auth/google/callback',
       }
       
       console.log('🔧 After cleanup:', JSON.stringify(frontendUrl));
-      const redirectUrl = `${frontendUrl}/auth-success?token=${encodeURIComponent(token)}`;
-      console.log('🔄 Final redirect URL:', redirectUrl);
+      // CRITICAL FIX: Use hash routing for React app
+      const redirectUrl = `${frontendUrl}/#/auth-success?token=${encodeURIComponent(token)}`;
+      console.log('🔄 Final redirect URL (with hash routing):', redirectUrl);
       
       res.redirect(redirectUrl);
     } catch (error) {
@@ -574,7 +575,7 @@ app.get('/auth/google/callback',
       console.error('📋 Error stack:', error.stack);
       let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
       frontendUrl = frontendUrl.replace(/\/+$/, '');
-      res.redirect(`${frontendUrl}/login?error=oauth_callback_failed`);
+      res.redirect(`${frontendUrl}/#/login?error=oauth_callback_failed`);
     }
   }
 );

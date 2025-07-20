@@ -68,13 +68,19 @@ const AuthSuccess = () => {
             const userData = await response.json();
             localStorage.setItem('user', JSON.stringify(userData));
             console.log('✅ User data stored:', userData);
+            console.log('✅ LocalStorage token:', localStorage.getItem('token'));
+            console.log('✅ LocalStorage user:', localStorage.getItem('user'));
             setStatus('Authentication successful! Redirecting to dashboard...');
             
             // Wait a moment then redirect
             setTimeout(() => {
+              console.log('🔄 Redirecting to dashboard...');
               navigate('/dashboard', { replace: true });
-            }, 500);
+            }, 1000);
           } else {
+            console.error('❌ Profile fetch failed with status:', response.status);
+            const errorText = await response.text();
+            console.error('❌ Profile fetch error:', errorText);
             throw new Error('Failed to fetch user profile');
           }
         } catch (profileError) {
@@ -83,8 +89,9 @@ const AuthSuccess = () => {
           
           // Even if profile fetch fails, redirect to dashboard with token
           setTimeout(() => {
+            console.log('🔄 Redirecting to dashboard (fallback)...');
             navigate('/dashboard', { replace: true });
-          }, 500);
+          }, 1000);
         }
       } catch (error) {
         console.error('❌ Authentication processing error:', error);
