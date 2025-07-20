@@ -334,31 +334,6 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
         }
         break;
       
-      case 'invoice.payment_failed':
-        const invoice = event.data.object;
-        console.log('💸 Payment failed:', invoice.id);
-        
-        try {
-          const users = await userTable.select({
-            filterByFormula: `{stripeCustomerId} = "${invoice.customer}"`
-          }).firstPage();
-          
-          if (users.length > 0) {
-            await userTable.update([
-              {
-                id: users[0].id,
-                fields: {
-                  subscriptionStatus: 'payment_failed',
-                  lastPaymentFailure: new Date().toISOString()
-                }
-              }
-            ]);
-            console.log(`⚠️ Payment failed for user: ${users[0].fields.email}`);
-          }
-        } catch (error) {
-          console.error('❌ Error handling payment failure:', error);
-        }
-        break;
       
       case 'customer.subscription.updated':
         const updatedSub = event.data.object;
@@ -441,6 +416,52 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           }
         } catch (error) {
           console.error('❌ Error handling payment success:', error);
+        }
+        break;
+      
+      case 'customer.subscription.trial_will_end':
+        const trialEnding = event.data.object;
+        console.log(`⏰ Trial ending soon for subscription: ${trialEnding.id}`);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeSubscriptionId} = "${trialEnding.id}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            console.log(`📧 Trial ending notification for user: ${users[0].fields.email}`);
+            // You can send an email here if needed
+          }
+        } catch (error) {
+          console.error('❌ Error handling trial ending notification:', error);
+        }
+        break;
+      
+      case 'invoice.payment_failed':
+        const failedInvoice = event.data.object;
+        console.log(`💸 Payment failed for invoice: ${failedInvoice.id}`);
+        
+        // If this is a trial conversion failure, downgrade user
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeCustomerId} = "${failedInvoice.customer}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  tier: 'free', // Downgrade when trial payment fails
+                  subscriptionStatus: 'payment_failed',
+                  lastPaymentFailure: new Date().toISOString()
+                }
+              }
+            ]);
+            console.log(`⬇️ User downgraded due to payment failure: ${users[0].fields.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error handling payment failure:', error);
         }
         break;
       
@@ -1878,13 +1899,31 @@ process.on('SIGINT', () => {
   });
 });
 
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('📋 SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('📋 SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
 // Keep the process alive and handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('💥 Uncaught Exception:', err);
-  process.exit(1);
+  console.error('Stack trace:', err.stack);
+  // Don't exit immediately, let Railway handle restart
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+  // Don't exit immediately, log and continue
 });
