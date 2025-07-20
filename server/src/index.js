@@ -261,42 +261,113 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
         
         // Update user with customer ID and subscription info
         try {
-          // Get subscription details if available
-          let subscriptionUpdate = {};
+          console.log(`🔍 Processing subscription for user: ${session.metadata.userId}`);
+          console.log(`🔍 Session subscription ID: ${session.subscription}`);
+          
+          // Always set tier to paid for completed checkouts (trial or paid)
+          let subscriptionUpdate = {
+            tier: 'paid', // Always upgrade for completed checkout
+            subscriptionStatus: 'active', // Default to active
+            lastPaymentDate: new Date().toISOString()
+          };
+          
+          // Get detailed subscription info if available
           if (session.subscription) {
             try {
+              console.log(`📡 Retrieving subscription details from Stripe...`);
               const subscription = await stripe.subscriptions.retrieve(session.subscription);
               console.log(`📋 Retrieved subscription details:`, {
                 id: subscription.id,
                 status: subscription.status,
-                trial_end: subscription.trial_end
+                trial_end: subscription.trial_end,
+                current_period_start: subscription.current_period_start,
+                current_period_end: subscription.current_period_end
               });
               
               subscriptionUpdate = {
-                tier: 'paid', // Give access immediately (for trials or active)
+                tier: 'paid', // Always paid for any subscription
                 subscriptionStatus: subscription.status,
-                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+                lastPaymentDate: new Date().toISOString()
               };
+              console.log(`📝 Subscription update object:`, subscriptionUpdate);
             } catch (subError) {
-              console.error('❌ Error retrieving subscription:', subError);
+              console.error('❌ Error retrieving subscription from Stripe:', subError);
+              console.error('❌ Subscription error details:', subError.message);
+              // Continue with basic update even if Stripe call fails
             }
+          } else {
+            console.log('⚠️ No subscription ID in session - using basic upgrade');
           }
+          
+          const updateData = {
+            stripeCustomerId: session.customer,
+            stripeSubscriptionId: session.subscription || null,
+            lastCheckoutSession: session.id,
+            ...subscriptionUpdate
+          };
+          
+          console.log(`📝 Final update data for user ${session.metadata.userId}:`, updateData);
+          
+          // Get user data before update for comparison
+          const userBeforeUpdate = await userTable.find(session.metadata.userId);
+          console.log(`📋 Before update - User tier: ${userBeforeUpdate.fields.tier}`);
+          console.log(`📋 Before update - Full user fields:`, userBeforeUpdate.fields);
           
           const updateResult = await userTable.update([
             {
               id: session.metadata.userId,
-              fields: {
-                stripeCustomerId: session.customer,
-                stripeSubscriptionId: session.subscription || null,
-                lastCheckoutSession: session.id,
-                lastPaymentDate: new Date().toISOString(),
-                ...subscriptionUpdate
-              }
+              fields: updateData
             }
           ]);
           
           console.log(`✅ User ${session.metadata.userEmail} checkout completed`);
           console.log('📊 Database update result:', updateResult[0]?.id);
+          console.log('📊 Database update returned fields:', updateResult[0]?.fields);
+          
+          // Verify the update actually worked
+          try {
+            const verifyUser = await userTable.find(session.metadata.userId);
+            console.log(`🔍 Post-update verification - User tier: ${verifyUser.fields.tier}`);
+            console.log(`🔍 Post-update verification - Subscription status: ${verifyUser.fields.subscriptionStatus}`);
+            console.log(`🔍 Post-update verification - Full fields:`, verifyUser.fields);
+            
+            if (verifyUser.fields.tier !== 'paid') {
+              console.error(`❌ CRITICAL: Database update failed! User tier is still: ${verifyUser.fields.tier}`);
+              console.error(`❌ Update data that was sent:`, updateData);
+              console.error(`❌ Update result:`, updateResult);
+              
+              // Wait and try again to check for caching issues
+              console.log('⏳ Waiting 2 seconds and checking again for caching issues...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              const verifyUser2 = await userTable.find(session.metadata.userId);
+              console.log(`🔍 Second verification - User tier: ${verifyUser2.fields.tier}`);
+              
+              if (verifyUser2.fields.tier !== 'paid') {
+                console.error(`❌ CRITICAL: Even after delay, user tier is still: ${verifyUser2.fields.tier}`);
+                // Try a direct tier-only update to test field access
+                try {
+                  console.log('🔧 Testing direct tier field update...');
+                  const directUpdate = await userTable.update([
+                    {
+                      id: session.metadata.userId,
+                      fields: { tier: 'paid' }
+                    }
+                  ]);
+                  console.log('🔧 Direct tier update result:', directUpdate[0]?.fields);
+                } catch (directError) {
+                  console.error('❌ Direct tier update failed:', directError);
+                }
+              } else {
+                console.log(`✅ DELAYED SUCCESS: User tier updated to 'paid' after delay`);
+              }
+            } else {
+              console.log(`✅ SUCCESS: User tier correctly updated to 'paid'`);
+            }
+          } catch (verifyError) {
+            console.error('❌ Error verifying database update:', verifyError);
+          }
           
           // Send payment receipt email
           try {
@@ -1442,21 +1513,28 @@ app.post('/join-waitlist', async (req, res) => {
 
 app.get('/profile', authenticateToken, async (req, res) => {
   try {
+    console.log('📞 Profile API called - User ID:', req.user.id);
+    console.log('📞 Profile API called at:', new Date().toISOString());
+    
     const records = await userTable.find(req.user.id);
-    console.log('Profile API - User ID:', req.user.id);
-    console.log('Profile API - User record:', records.fields);
+    console.log('📋 Profile API - Full Airtable record:', records.fields);
+    console.log('📋 Profile API - Tier from DB:', records.fields.tier);
+    console.log('📋 Profile API - Subscription status from DB:', records.fields.subscriptionStatus);
+    console.log('📋 Profile API - Stripe customer ID:', records.fields.stripeCustomerId);
+    console.log('📋 Profile API - Stripe subscription ID:', records.fields.stripeSubscriptionId);
+    
     const userData = {
       id: records.id,
       email: records.fields.email,
       firstName: records.fields.firstName,
       lastName: records.fields.lastName,
       company: records.fields.company,
-      tier: records.fields.tier
+      tier: records.fields.tier || 'free'
     };
-    console.log('Profile API - Returning user data:', userData);
+    console.log('📤 Profile API - Returning user data:', userData);
     res.json(userData);
   } catch (err) {
-    console.error('Profile error:', err);
+    console.error('❌ Profile API error:', err);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -1969,6 +2047,58 @@ setInterval(cleanupExpiredVerificationCodes, 30 * 60 * 1000);
 
 // Run cleanup on startup
 cleanupExpiredVerificationCodes();
+
+// Test endpoint for debugging tier field issues
+app.get('/debug-tier', authenticateToken, async (req, res) => {
+  try {
+    const testUserId = req.user.id;
+    console.log('🧪 DEBUGGING TIER FIELD for user:', testUserId);
+    
+    // Get current user data
+    const currentUser = await userTable.find(testUserId);
+    console.log('🧪 Current user fields:', currentUser.fields);
+    console.log('🧪 Current user tier:', currentUser.fields.tier);
+    console.log('🧪 Current user tier type:', typeof currentUser.fields.tier);
+    
+    // Try updating just the tier field
+    try {
+      console.log('🧪 Attempting to update tier to "paid"...');
+      const testUpdate = await userTable.update([
+        {
+          id: testUserId,
+          fields: { tier: 'paid' }
+        }
+      ]);
+      console.log('🧪 Test tier update result:', testUpdate);
+      console.log('🧪 Test tier update fields:', testUpdate[0]?.fields);
+      
+      // Verify the update immediately
+      const verifyUser = await userTable.find(testUserId);
+      console.log('🧪 Verified tier after test update:', verifyUser.fields.tier);
+      console.log('🧪 Verified all fields after test update:', verifyUser.fields);
+      
+      res.json({
+        success: true,
+        original: currentUser.fields,
+        updateResult: testUpdate[0]?.fields,
+        verified: verifyUser.fields,
+        tierUpdateWorked: verifyUser.fields.tier === 'paid'
+      });
+      
+    } catch (tierError) {
+      console.error('🧪 Tier field update failed:', tierError);
+      res.json({
+        success: false,
+        error: tierError.message,
+        original: currentUser.fields
+      });
+    }
+    
+  } catch (error) {
+    console.error('🧪 Debug tier endpoint error:', error);
+    res.status(500).json({ error: 'Debug failed' });
+  }
+});
 
 const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Server listening at http://0.0.0.0:${port}`);
