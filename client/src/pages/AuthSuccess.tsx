@@ -24,9 +24,11 @@ const AuthSuccess = () => {
       console.log('💾 Storing token and redirecting to dashboard...');
       localStorage.setItem('token', token);
       
-      // Force immediate redirect to dashboard with hash routing
-      console.log('🔄 Executing redirect to #/dashboard');
-      window.location.href = '#/dashboard';
+      // Small delay to ensure localStorage is properly set
+      setTimeout(() => {
+        console.log('🔄 Executing redirect to /dashboard');
+        navigate('/dashboard', { replace: true });
+      }, 100);
     } else {
       console.error('❌ No token found in URL parameters');
       navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
