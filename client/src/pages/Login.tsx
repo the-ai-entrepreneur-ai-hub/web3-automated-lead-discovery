@@ -21,9 +21,11 @@ const Login = () => {
     if (oauthError) {
       const errorMessages: { [key: string]: string } = {
         'oauth_failed': 'Google authentication failed. Please try again.',
-        'oauth_not_configured': 'Google authentication is not properly configured. Please contact support.',
+        'oauth_not_configured': 'Google authentication is not properly configured. Please check your Google Client ID settings.',
         'no_user_data': 'Failed to get user information from Google. Please try again.',
-        'oauth_callback_failed': 'Google authentication callback failed. Please try again.'
+        'oauth_callback_failed': 'Google authentication callback failed. Please try again.',
+        'google_oauth_error': 'Google OAuth service error. Please try again later.',
+        'oauth_initiation_failed': 'Failed to start Google authentication. Please try again.'
       };
       setError(errorMessages[oauthError] || 'Authentication failed. Please try again.');
     }
@@ -64,8 +66,20 @@ const Login = () => {
 
   const handleSocialAuth = (provider: string) => {
     if (provider === 'Google') {
-      // Redirect to Google OAuth
-      window.location.href = `${config.API_URL}/auth/google`;
+      // Clear any existing errors
+      setError("");
+      setIsLoading(true);
+      
+      try {
+        // Redirect to Google OAuth
+        console.log('🔄 Initiating Google OAuth...');
+        console.log('🌐 OAuth URL:', `${config.API_URL}/auth/google`);
+        window.location.href = `${config.API_URL}/auth/google`;
+      } catch (error) {
+        console.error('❌ Error initiating Google OAuth:', error);
+        setError('Failed to initialize Google authentication. Please try again.');
+        setIsLoading(false);
+      }
     } else {
       alert(`${provider} authentication is not yet implemented. Please use email/password login for now.`);
     }

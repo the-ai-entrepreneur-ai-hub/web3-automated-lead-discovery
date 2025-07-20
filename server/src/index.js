@@ -48,9 +48,21 @@ const setCachedProjects = (data) => {
 app.use(compression()); // Compress responses
 
 // Configure CORS to allow credentials
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000', 
+  'https://web3-automated-lead-discovery.netlify.app',
+  'https://web3-prospector.netlify.app',
+  'https://dulcet-madeleine-2018aa.netlify.app',
+  'https://dulcet-modelsine-2018aa.netlify.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://the-ai-entrepreneur-ai-hub.github.io', 'https://web3-automated-lead-discovery.netlify.app', 'https://web3-prospector.netlify.app', 'https://6879cee60f4492000841f687--dulcet-madeleine-2018aa.netlify.app', 'https://dulcet-madeleine-2018aa.netlify.app', 'https://rawfreedomai.com'],
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Session configuration for OAuth
@@ -72,32 +84,55 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Debug OAuth configuration
+// Validate OAuth configuration
+const validateOAuthConfig = () => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  
+  if (!clientId || !clientSecret) {
+    console.error('❌ Missing Google OAuth credentials');
+    return false;
+  }
+  
+  if (clientId.includes('your_') || clientId.includes('http')) {
+    console.error('❌ Invalid Google Client ID format. Should end with .apps.googleusercontent.com');
+    return false;
+  }
+  
+  if (!clientId.endsWith('.apps.googleusercontent.com')) {
+    console.error('❌ Google Client ID should end with .apps.googleusercontent.com');
+    return false;
+  }
+  
+  return true;
+};
+
+const isOAuthConfigValid = validateOAuthConfig();
 console.log('🔐 OAuth Configuration:', {
+  isValid: isOAuthConfigValid,
   hasClientId: !!process.env.GOOGLE_CLIENT_ID,
   hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-  clientIdLength: process.env.GOOGLE_CLIENT_ID?.length || 0,
-  clientSecretLength: process.env.GOOGLE_CLIENT_SECRET?.length || 0,
-  isPlaceholder: process.env.GOOGLE_CLIENT_ID?.includes('your_') || false,
+  clientIdFormat: process.env.GOOGLE_CLIENT_ID?.endsWith('.apps.googleusercontent.com') ? 'Valid' : 'Invalid',
   callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/google/callback`,
-  clientUrl: process.env.CLIENT_URL,
-  apiBaseUrl: process.env.API_BASE_URL
+  clientUrl: process.env.CLIENT_URL
 });
 
-// Passport configuration
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  console.error('❌ Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
-} else if (process.env.GOOGLE_CLIENT_ID.includes('your_')) {
-  console.error('❌ Google OAuth credentials are still placeholder values. Please replace with real credentials from Google Cloud Console.');
+// Enhanced Passport configuration with proper validation
+if (!isOAuthConfigValid) {
+  console.error('❌ Google OAuth not properly configured. Authentication will be disabled.');
+  console.error('Please ensure GOOGLE_CLIENT_ID ends with .apps.googleusercontent.com');
+  console.error('And GOOGLE_CLIENT_SECRET is properly set from Google Cloud Console');
 } else {
-  console.log('✅ Google OAuth credentials configured');
+  console.log('✅ Google OAuth credentials properly configured');
 }
 
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/google/callback`
-}, async (accessToken, refreshToken, profile, done) => {
+// Only configure Passport if OAuth is properly set up
+if (isOAuthConfigValid) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/google/callback`
+  }, async (accessToken, refreshToken, profile, done) => {
   console.log('🔍 Google Strategy callback triggered');
   console.log('📧 Profile email:', profile.emails?.[0]?.value);
   console.log('👤 Profile data:', { id: profile.id, name: profile.name });
@@ -157,7 +192,10 @@ passport.use(new GoogleStrategy({
     console.error('❌ Google OAuth error:', error);
     return done(error, null);
   }
-}));
+  }));
+} else {
+  console.log('⚠️ Skipping Google OAuth strategy configuration due to invalid credentials');
+}
 
 passport.serializeUser((user, done) => {
   done(null, user.id);

@@ -42,7 +42,7 @@ const Dashboard = () => {
   const [projectsLoading, setProjectsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Memoize API calls to prevent unnecessary re-renders
+  // Enhanced authentication check with retry logic
   const fetchData = useCallback(async () => {
     console.log('🔍 Dashboard: Checking authentication...');
     const token = localStorage.getItem("token");
@@ -54,7 +54,17 @@ const Dashboard = () => {
       return;
     }
     
-    console.log('✅ Token found, proceeding with data fetch');
+    // Validate token format
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      console.log('❌ Invalid token format, clearing and redirecting');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+      return;
+    }
+    
+    console.log('✅ Valid token found, proceeding with data fetch');
 
     setIsLoading(true);
     setProjectsLoading(true);
@@ -135,12 +145,27 @@ const Dashboard = () => {
       }
     }
 
-    // Longer delay to ensure localStorage is populated from OAuth flow
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 800);
-    
-    return () => clearTimeout(timer);
+    // Initial authentication check with adaptive delay
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        // Token exists, fetch data immediately
+        fetchData();
+      } else {
+        // No token, wait a bit for OAuth flow to complete, then check again
+        setTimeout(() => {
+          const retryToken = localStorage.getItem("token");
+          if (retryToken) {
+            fetchData();
+          } else {
+            console.log('⏰ No token after retry, redirecting to login');
+            navigate("/login");
+          }
+        }, 500);
+      }
+    };
+
+    checkAuth();
   }, [fetchData]);
 
 
