@@ -214,6 +214,9 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+// Store processed webhook events to prevent duplicate processing
+const processedWebhooks = new Set();
+
 // Stripe webhook endpoint needs raw body, so place it before JSON middleware
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -222,100 +225,185 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('❌ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Prevent duplicate webhook processing
+  const eventKey = `${event.id}-${event.type}`;
+  if (processedWebhooks.has(eventKey)) {
+    console.log(`✅ Already processed webhook ${event.id}`);
+    return res.status(200).json({ received: true });
+  }
+  processedWebhooks.add(eventKey);
+
+  console.log(`🔔 Processing webhook: ${event.type} (${event.id})`);
+
   // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object;
-      console.log('Payment succeeded:', session.id);
-      
-      // Update user tier to paid
-      try {
-        await userTable.update([
-          {
-            id: session.metadata.userId,
-            fields: {
-              tier: 'paid',
-              stripeCustomerId: session.customer,
-              stripeSubscriptionId: session.subscription,
-            }
-          }
-        ]);
-        console.log(`User ${session.metadata.userEmail} upgraded to paid tier`);
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object;
+        console.log('💳 Payment succeeded:', session.id);
         
-        // Send payment receipt email
-        try {
-          const userDetails = {
-            firstName: session.metadata.firstName || 'Valued Customer',
-            lastName: session.metadata.lastName || '',
-            email: session.metadata.userEmail
-          };
-          
-          const paymentDetails = {
-            amount: session.amount_total,
-            currency: session.currency,
-            paymentMethod: 'Credit Card',
-            transactionId: session.payment_intent,
-            date: new Date(session.created * 1000).toISOString()
-          };
-          
-          const subscriptionDetails = {
-            planName: 'Web3Radar Premium',
-            billingCycle: 'Monthly',
-            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          };
-          
-          await sendPaymentReceipt(userDetails, paymentDetails, subscriptionDetails);
-          console.log(`Payment receipt sent to ${session.metadata.userEmail}`);
-        } catch (emailError) {
-          console.error('Error sending payment receipt:', emailError);
+        // Validate required metadata
+        if (!session.metadata?.userId) {
+          console.error('❌ Missing userId in session metadata');
+          throw new Error('Missing userId in session metadata');
         }
-      } catch (error) {
-        console.error('Error updating user tier:', error);
-      }
-      break;
-    
-    case 'customer.subscription.deleted':
-      const subscription = event.data.object;
-      console.log('Subscription cancelled:', subscription.id);
-      
-      // Update user tier to free
-      try {
-        const users = await userTable.select({
-          filterByFormula: `{stripeSubscriptionId} = "${subscription.id}"`
-        }).firstPage();
         
-        if (users.length > 0) {
-          await userTable.update([
+        // Update user tier to paid with retry logic
+        try {
+          const updateResult = await userTable.update([
             {
-              id: users[0].id,
+              id: session.metadata.userId,
               fields: {
-                tier: 'free',
-                stripeSubscriptionId: '',
+                tier: 'paid',
+                stripeCustomerId: session.customer,
+                stripeSubscriptionId: session.subscription,
+                lastPaymentDate: new Date().toISOString(),
+                subscriptionStatus: 'active'
               }
             }
           ]);
-          console.log(`User subscription cancelled: ${users[0].fields.email}`);
+          
+          console.log(`✅ User ${session.metadata.userEmail} upgraded to paid tier`);
+          console.log('📊 Database update result:', updateResult[0]?.id);
+          
+          // Send payment receipt email
+          try {
+            const userDetails = {
+              firstName: session.metadata.firstName || 'Valued Customer',
+              lastName: session.metadata.lastName || '',
+              email: session.metadata.userEmail
+            };
+            
+            const paymentDetails = {
+              amount: session.amount_total,
+              currency: session.currency,
+              paymentMethod: 'Credit Card',
+              transactionId: session.payment_intent,
+              date: new Date(session.created * 1000).toISOString()
+            };
+            
+            const subscriptionDetails = {
+              planName: 'Web3Radar Premium',
+              billingCycle: 'Monthly',
+              nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            };
+            
+            await sendPaymentReceipt(userDetails, paymentDetails, subscriptionDetails);
+            console.log(`📧 Payment receipt sent to ${session.metadata.userEmail}`);
+          } catch (emailError) {
+            console.error('❌ Error sending payment receipt:', emailError);
+          }
+        } catch (dbError) {
+          console.error('❌ Critical: Failed to update user tier in database:', dbError);
+          throw dbError;
         }
-      } catch (error) {
-        console.error('Error updating user tier on cancellation:', error);
-      }
-      break;
+        break;
     
-    case 'invoice.payment_failed':
-      const invoice = event.data.object;
-      console.log('Payment failed:', invoice.id);
-      // Handle failed payment (send email, etc.)
-      break;
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object;
+        console.log('🚫 Subscription cancelled:', subscription.id);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeSubscriptionId} = "${subscription.id}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  tier: 'free',
+                  stripeSubscriptionId: '',
+                  subscriptionStatus: 'cancelled',
+                  cancellationDate: new Date().toISOString()
+                }
+              }
+            ]);
+            console.log(`✅ User subscription cancelled: ${users[0].fields.email}`);
+          } else {
+            console.log(`⚠️ No user found for subscription ${subscription.id}`);
+          }
+        } catch (error) {
+          console.error('❌ Error updating user tier on cancellation:', error);
+          throw error;
+        }
+        break;
+      
+      case 'invoice.payment_failed':
+        const invoice = event.data.object;
+        console.log('💸 Payment failed:', invoice.id);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeCustomerId} = "${invoice.customer}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  subscriptionStatus: 'payment_failed',
+                  lastPaymentFailure: new Date().toISOString()
+                }
+              }
+            ]);
+            console.log(`⚠️ Payment failed for user: ${users[0].fields.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error handling payment failure:', error);
+        }
+        break;
+      
+      case 'customer.subscription.updated':
+        const updatedSub = event.data.object;
+        console.log(`🔄 Subscription updated: ${updatedSub.id} - Status: ${updatedSub.status}`);
+        
+        try {
+          const users = await userTable.select({
+            filterByFormula: `{stripeSubscriptionId} = "${updatedSub.id}"`
+          }).firstPage();
+          
+          if (users.length > 0) {
+            const newTier = updatedSub.status === 'active' ? 'paid' : 'free';
+            await userTable.update([
+              {
+                id: users[0].id,
+                fields: {
+                  tier: newTier,
+                  subscriptionStatus: updatedSub.status
+                }
+              }
+            ]);
+            console.log(`✅ User tier updated to ${newTier}: ${users[0].fields.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error updating subscription status:', error);
+        }
+        break;
+      
+      default:
+        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+    }
     
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
+    // Clean up old processed webhooks (keep last 1000)
+    if (processedWebhooks.size > 1000) {
+      const webhooksArray = Array.from(processedWebhooks);
+      processedWebhooks.clear();
+      webhooksArray.slice(-500).forEach(id => processedWebhooks.add(id));
+    }
+    
+  } catch (webhookError) {
+    console.error('❌ Critical webhook processing error:', webhookError);
+    return res.status(500).json({ error: 'Webhook processing failed' });
   }
 
-  res.json({ received: true });
+  res.status(200).json({ received: true, processed: true });
 });
 
 // JSON middleware for all other routes
@@ -1402,6 +1490,13 @@ app.get('/seed', async (req, res) => {
 app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
     const { discountCode } = req.body;
+    
+    // Validate Stripe configuration
+    if (!STRIPE_CONFIG.IS_CONFIGURED) {
+      console.error('❌ Stripe not properly configured');
+      return res.status(500).json({ error: 'Payment system not configured' });
+    }
+    
     const user = await userTable.find(req.user.id);
     
     if (!user) {
@@ -1409,15 +1504,22 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     }
 
     // Check if user is already subscribed
-    if (user.fields.tier === 'paid') {
+    if (user.fields.tier === 'paid' && user.fields.subscriptionStatus === 'active') {
       return res.status(400).json({ error: 'User already has active subscription' });
     }
 
-    // Create session configuration
+    console.log(`💳 Creating checkout session for user: ${user.fields.email}`);
+
+    // Create session configuration - use Price ID if available, otherwise create price dynamically
     const sessionConfig = {
       payment_method_types: ['card'],
       line_items: [
-        {
+        STRIPE_CONFIG.PRICE_ID ? {
+          // Use existing Price ID from Stripe Dashboard
+          price: STRIPE_CONFIG.PRICE_ID,
+          quantity: 1,
+        } : {
+          // Create price dynamically
           price_data: {
             currency: STRIPE_CONFIG.CURRENCY,
             product_data: {
@@ -1430,7 +1532,7 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
             },
           },
           quantity: 1,
-        },
+        }
       ],
       mode: 'subscription',
       success_url: STRIPE_CONFIG.SUCCESS_URL,
@@ -1439,13 +1541,17 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       metadata: {
         userId: req.user.id,
         userEmail: user.fields.email,
-        firstName: user.fields.firstName,
-        lastName: user.fields.lastName,
+        firstName: user.fields.firstName || '',
+        lastName: user.fields.lastName || '',
       },
       subscription_data: {
-        trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS, // Add 7-day free trial
+        trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS,
       },
+      allow_promotion_codes: true, // Allow users to enter promo codes
+      billing_address_collection: 'required',
     };
+    
+    console.log(`🏷️ Using ${STRIPE_CONFIG.PRICE_ID ? 'existing Price ID' : 'dynamic pricing'}: $${STRIPE_CONFIG.MONTHLY_PRICE / 100}/month`);
 
     // Apply discount code if provided
     if (discountCode && STRIPE_CONFIG.DISCOUNT_CODES[discountCode]) {
@@ -1454,6 +1560,7 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
         let coupon;
         try {
           coupon = await stripe.coupons.retrieve(discountCode);
+          console.log(`🏷️ Retrieved existing coupon: ${discountCode}`);
         } catch (couponError) {
           // Create new coupon if it doesn't exist
           const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[discountCode];
@@ -1463,25 +1570,46 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
             duration: discountInfo.duration,
             name: discountInfo.description,
           });
+          console.log(`✨ Created new coupon: ${discountCode}`);
         }
 
         sessionConfig.discounts = [{
           coupon: coupon.id,
         }];
         
-        console.log(`Applied discount code: ${discountCode} (${coupon.percent_off}% off)`);
+        console.log(`🏷️ Applied discount code: ${discountCode} (${coupon.percent_off}% off)`);
       } catch (couponError) {
-        console.error('Error applying discount code:', couponError);
+        console.error('❌ Error applying discount code:', couponError);
         return res.status(400).json({ error: 'Invalid discount code' });
       }
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
+    
+    console.log(`✅ Checkout session created: ${session.id}`);
+    console.log(`🔗 Redirect URL: ${session.url}`);
 
-    res.json({ url: session.url });
+    res.json({ 
+      url: session.url,
+      sessionId: session.id,
+      success: true 
+    });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    console.error('❌ Error creating checkout session:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to create checkout session';
+    if (error.message.includes('price')) {
+      errorMessage = 'Invalid price configuration. Please contact support.';
+    } else if (error.message.includes('customer')) {
+      errorMessage = 'Customer information error. Please try again.';
+    }
+    
+    res.status(500).json({ 
+      error: errorMessage,
+      details: error.message,
+      success: false 
+    });
   }
 });
 
@@ -1515,7 +1643,7 @@ app.post('/validate-discount-code', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user's subscription status
+// Get user's subscription status with real-time Stripe data
 app.get('/subscription-status', authenticateToken, async (req, res) => {
   try {
     const user = await userTable.find(req.user.id);
@@ -1526,9 +1654,11 @@ app.get('/subscription-status', authenticateToken, async (req, res) => {
 
     let subscriptionStatus = {
       tier: user.fields.tier || 'free',
-      isActive: user.fields.tier === 'paid',
+      subscriptionStatus: user.fields.subscriptionStatus || 'none',
+      lastPaymentDate: user.fields.lastPaymentDate || null,
       stripeCustomerId: user.fields.stripeCustomerId || null,
       stripeSubscriptionId: user.fields.stripeSubscriptionId || null,
+      isActive: user.fields.tier === 'paid' && user.fields.subscriptionStatus === 'active',
     };
 
     // If user has a subscription, get details from Stripe

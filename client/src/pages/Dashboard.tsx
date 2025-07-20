@@ -40,7 +40,51 @@ const Dashboard = () => {
   const [visibleProjects, setVisibleProjects] = useState(6);
   const [isLoading, setIsLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const navigate = useNavigate();
+
+  // Check for payment status in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    
+    if (payment === 'success') {
+      setPaymentStatus('Payment successful! Your account has been upgraded to Pro.');
+      // Refresh subscription data after successful payment
+      setTimeout(refreshSubscriptionStatus, 2000);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname + '#/dashboard');
+    } else if (payment === 'canceled') {
+      setPaymentStatus('Payment was canceled. You can try again anytime.');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname + '#/dashboard');
+    }
+  }, []);
+
+  // Refresh subscription status
+  const refreshSubscriptionStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    
+    try {
+      const data = await stripeApi.getSubscriptionStatus(token);
+      setSubscriptionData(data);
+      
+      // Update user data in localStorage if tier changed
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        if (userData.tier !== data.tier) {
+          userData.tier = data.tier;
+          localStorage.setItem('user', JSON.stringify(userData));
+          setUser(userData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+    }
+  };
 
   // Enhanced authentication check with retry logic
   const fetchData = useCallback(async () => {
@@ -254,11 +298,19 @@ const Dashboard = () => {
         return;
       }
 
-      const { url } = await stripeApi.createCheckoutSession(token);
-      window.location.href = url;
+      setPaymentStatus('Redirecting to payment...');
+      const response = await stripeApi.createCheckoutSession(token);
+      
+      if (response.success && response.url) {
+        console.log('🔄 Redirecting to Stripe checkout:', response.url);
+        window.location.href = response.url;
+      } else {
+        throw new Error(response.error || 'Failed to get checkout URL');
+      }
     } catch (error) {
-      console.error('Error upgrading:', error);
-      alert('Failed to start upgrade process. Please try again.');
+      console.error('❌ Error upgrading:', error);
+      setPaymentStatus('Failed to start upgrade process. Please try again.');
+      setTimeout(() => setPaymentStatus(null), 5000);
     }
   };
 
@@ -324,6 +376,27 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Payment Status Message */}
+      {paymentStatus && (
+        <div className={`mx-6 mt-4 px-6 py-3 rounded-lg border ${
+          paymentStatus.includes('successful') 
+            ? 'bg-green-500/10 border-green-500/20 text-green-700' 
+            : paymentStatus.includes('canceled') 
+            ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700'
+            : 'bg-red-500/10 border-red-500/20 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span>{paymentStatus}</span>
+            <button 
+              onClick={() => setPaymentStatus(null)}
+              className="ml-4 text-current opacity-70 hover:opacity-100"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Dashboard Content Header */}
       <div className="bg-card/50 border-b border-border/50">
