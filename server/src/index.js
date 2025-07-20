@@ -1695,6 +1695,8 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     };
     
     console.log(`🏷️ Using ${STRIPE_CONFIG.PRICE_ID ? 'existing Price ID' : 'dynamic pricing'}: $${STRIPE_CONFIG.MONTHLY_PRICE / 100}/month`);
+    console.log(`📦 Request body:`, req.body);
+    console.log(`🏷️ Discount code received:`, discountCode || 'NONE');
 
     // Apply discount code if provided (case-insensitive)
     if (discountCode) {
