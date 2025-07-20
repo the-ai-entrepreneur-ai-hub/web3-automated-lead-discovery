@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const compression = require('compression');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const TwitterStrategy = require('passport-twitter').Strategy;
+const OAuth2Strategy = require('passport-oauth2').Strategy;
 const session = require('express-session');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
@@ -235,27 +235,42 @@ if (isOAuthConfigValid) {
   console.log('⚠️ Skipping Google OAuth strategy configuration due to invalid credentials');
 }
 
-// Twitter OAuth Strategy Configuration
+// Twitter OAuth 2.0 Strategy Configuration
 if (isTwitterConfigValid) {
-  passport.use(new TwitterStrategy({
-    consumerKey: process.env.TWITTER_CLIENT_ID,
-    consumerSecret: process.env.TWITTER_CLIENT_SECRET,
+  passport.use('twitter', new OAuth2Strategy({
+    authorizationURL: 'https://twitter.com/i/oauth2/authorize',
+    tokenURL: 'https://api.twitter.com/2/oauth2/token',
+    clientID: process.env.TWITTER_CLIENT_ID,
+    clientSecret: process.env.TWITTER_CLIENT_SECRET,
     callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`,
-    includeEmail: true // Request email permission
-  }, async (token, tokenSecret, profile, done) => {
-    console.log('🔍 Twitter Strategy callback triggered');
-    console.log('👤 Twitter Profile data:', { 
-      id: profile.id, 
-      username: profile.username, 
-      displayName: profile.displayName,
-      emails: profile.emails 
-    });
+    scope: ['tweet.read', 'users.read', 'offline.access', 'user:email'],
+    state: true,
+    pkce: true
+  }, async (accessToken, refreshToken, profile, done) => {
+    console.log('🔍 Twitter OAuth 2.0 Strategy callback triggered');
+    console.log('🔑 Access Token received:', accessToken ? 'Yes' : 'No');
     
     try {
-      // Twitter email is optional, so we need to handle cases where email might not be available
-      const email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
-      const username = profile.username;
-      const displayName = profile.displayName || profile.username;
+      // Fetch user data from Twitter API v2
+      const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,email', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!userResponse.ok) {
+        console.error('❌ Failed to fetch Twitter user data:', userResponse.status, userResponse.statusText);
+        return done(new Error('Failed to fetch user data from Twitter'), null);
+      }
+      
+      const userData = await userResponse.json();
+      console.log('👤 Twitter User Data:', userData);
+      
+      const user = userData.data;
+      const email = user.email || null; // Email may not be available
+      const username = user.username;
+      const displayName = user.name || user.username;
       
       console.log('🔍 Twitter OAuth callback received for user:', email || username);
       
@@ -314,7 +329,7 @@ if (isTwitterConfigValid) {
             {
               fields: {
                 ...userFields,
-                twitterId: profile.id,
+                twitterId: user.id,
                 twitterUsername: username
               }
             }
