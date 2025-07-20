@@ -42,15 +42,19 @@ const Dashboard = () => {
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [activeDiscountCode, setActiveDiscountCode] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check for payment status in URL
+  // Check for payment status in URL and active discount code
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const payment = urlParams.get('payment');
     
     if (payment === 'success') {
       setPaymentStatus('Payment successful! Your account has been upgraded to Pro.');
+      // Clear discount code after successful payment
+      localStorage.removeItem('appliedDiscountCode');
+      setActiveDiscountCode(null);
       // Refresh subscription data after successful payment
       setTimeout(refreshSubscriptionStatus, 2000);
       // Clean URL
@@ -60,6 +64,10 @@ const Dashboard = () => {
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname + '#/dashboard');
     }
+    
+    // Check for active discount code
+    const storedDiscountCode = localStorage.getItem('appliedDiscountCode');
+    setActiveDiscountCode(storedDiscountCode);
   }, []);
 
   // Refresh subscription status
@@ -298,8 +306,12 @@ const Dashboard = () => {
         return;
       }
 
+      // Get stored discount code if available
+      const storedDiscountCode = localStorage.getItem('appliedDiscountCode');
+      console.log('🏷️ Using stored discount code:', storedDiscountCode || 'NONE');
+
       setPaymentStatus('Redirecting to secure payment...');
-      const response = await stripeApi.createCheckoutSession(token);
+      const response = await stripeApi.createCheckoutSession(token, storedDiscountCode || undefined);
       
       if (response.success && response.url) {
         console.log('🔄 Redirecting to Stripe checkout:', response.url);
@@ -431,6 +443,32 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Active Discount Code Banner */}
+      {activeDiscountCode && user?.tier !== 'paid' && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+          <div className="max-w-7xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔥</span>
+                <span className="font-semibold">70% OFF Applied!</span>
+                <span className="text-sm opacity-90">
+                  Code "{activeDiscountCode}" is active - All upgrade buttons will use this discount
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('appliedDiscountCode');
+                  setActiveDiscountCode(null);
+                }}
+                className="text-white/80 hover:text-white text-sm underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
