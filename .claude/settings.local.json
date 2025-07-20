@@ -72,7 +72,8 @@
       "Bash(cmd.exe /c 'git rm RAILWAY_ENV_VARS.md')",
       "Bash(cmd.exe /c 'git rm --cached claudecodeui')",
       "Bash(cmd.exe:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
