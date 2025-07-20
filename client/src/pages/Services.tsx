@@ -287,7 +287,7 @@ const Services = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Start with a 7-day free trial. No credit card required.
+                          Start with a 14-day free trial. No credit card required.
                         </p>
                       </div>
                     </CardContent>
@@ -446,7 +446,7 @@ const Services = () => {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            7-day free trial • No credit card required • Cancel anytime
+            14-day free trial • No credit card required • Cancel anytime
           </p>
         </div>
       </main>

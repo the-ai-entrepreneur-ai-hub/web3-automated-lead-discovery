@@ -224,7 +224,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               )}
               
               <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
-                ✨ Start with a 7-day free trial!
+                ✨ Start with a 14-day free trial!
               </div>
             </div>
           )}

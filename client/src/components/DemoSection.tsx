@@ -241,7 +241,7 @@ const DemoSection = () => {
               </div>
 
               <p className="text-sm text-muted-foreground mt-4">
-                7-day free trial • No credit card required • Cancel anytime
+                14-day free trial • No credit card required • Cancel anytime
               </p>
             </div>
           </div>

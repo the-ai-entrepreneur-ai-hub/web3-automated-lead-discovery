@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const compression = require('compression');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const TwitterStrategy = require('passport-twitter').Strategy;
 const session = require('express-session');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
@@ -109,13 +110,37 @@ const validateOAuthConfig = () => {
   return true;
 };
 
+// Twitter OAuth validation
+const validateTwitterConfig = () => {
+  const clientId = process.env.TWITTER_CLIENT_ID;
+  const clientSecret = process.env.TWITTER_CLIENT_SECRET;
+  
+  if (!clientId || !clientSecret) {
+    console.log('⚠️ Twitter OAuth not configured - skipping Twitter authentication');
+    return false;
+  }
+  
+  if (clientId.includes('your_') || clientSecret.includes('your_')) {
+    console.error('❌ Twitter OAuth contains placeholder values');
+    return false;
+  }
+  
+  console.log('✅ Twitter OAuth credentials properly configured');
+  return true;
+};
+
 const isOAuthConfigValid = validateOAuthConfig();
+const isTwitterConfigValid = validateTwitterConfig();
+
 console.log('🔐 OAuth Configuration:', {
-  isValid: isOAuthConfigValid,
-  hasClientId: !!process.env.GOOGLE_CLIENT_ID,
-  hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-  clientIdFormat: process.env.GOOGLE_CLIENT_ID?.endsWith('.apps.googleusercontent.com') ? 'Valid' : 'Invalid',
-  callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/google/callback`,
+  googleValid: isOAuthConfigValid,
+  twitterValid: isTwitterConfigValid,
+  hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+  hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  hasTwitterClientId: !!process.env.TWITTER_CLIENT_ID,
+  hasTwitterClientSecret: !!process.env.TWITTER_CLIENT_SECRET,
+  googleCallbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/google/callback`,
+  twitterCallbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`,
   clientUrl: process.env.CLIENT_URL
 });
 
@@ -199,6 +224,117 @@ if (isOAuthConfigValid) {
   }));
 } else {
   console.log('⚠️ Skipping Google OAuth strategy configuration due to invalid credentials');
+}
+
+// Twitter OAuth Strategy Configuration
+if (isTwitterConfigValid) {
+  passport.use(new TwitterStrategy({
+    consumerKey: process.env.TWITTER_CLIENT_ID,
+    consumerSecret: process.env.TWITTER_CLIENT_SECRET,
+    callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`,
+    includeEmail: true // Request email permission
+  }, async (token, tokenSecret, profile, done) => {
+    console.log('🔍 Twitter Strategy callback triggered');
+    console.log('👤 Twitter Profile data:', { 
+      id: profile.id, 
+      username: profile.username, 
+      displayName: profile.displayName,
+      emails: profile.emails 
+    });
+    
+    try {
+      // Twitter email is optional, so we need to handle cases where email might not be available
+      const email = profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
+      const username = profile.username;
+      const displayName = profile.displayName || profile.username;
+      
+      console.log('🔍 Twitter OAuth callback received for user:', email || username);
+      
+      let existingUser = null;
+      
+      // First try to find user by email if available
+      if (email) {
+        const usersByEmail = await userTable.select({
+          filterByFormula: `{email} = "${email}"`
+        }).firstPage();
+        
+        if (usersByEmail.length > 0) {
+          existingUser = usersByEmail[0];
+          console.log('✅ Existing user found by email:', email);
+        }
+      }
+      
+      // If no user found by email, try to find by Twitter username
+      if (!existingUser) {
+        try {
+          const usersByTwitter = await userTable.select({
+            filterByFormula: `{twitterUsername} = "${username}"`
+          }).firstPage();
+          
+          if (usersByTwitter.length > 0) {
+            existingUser = usersByTwitter[0];
+            console.log('✅ Existing user found by Twitter username:', username);
+          }
+        } catch (twitterFieldError) {
+          console.log('⚠️ twitterUsername field not found in Airtable, continuing without it');
+        }
+      }
+      
+      if (existingUser) {
+        return done(null, existingUser);
+      } else {
+        console.log('👤 Creating new user for Twitter user:', email || username);
+        
+        // For Twitter users without email, we'll use username@twitter.local as a placeholder
+        const userEmail = email || `${username}@twitter.local`;
+        
+        // Prepare user fields
+        const userFields = {
+          email: userEmail,
+          firstName: displayName.split(' ')[0] || username,
+          lastName: displayName.split(' ').slice(1).join(' ') || '',
+          tier: 'free',
+          isVerified: true, // Twitter users are considered verified
+          source: 'twitter',
+          registrationDate: new Date().toISOString()
+        };
+        
+        // Try to create user with twitterUsername field
+        try {
+          const newUser = await userTable.create([
+            {
+              fields: {
+                ...userFields,
+                twitterId: profile.id,
+                twitterUsername: username
+              }
+            }
+          ]);
+          console.log('✅ New Twitter user created with twitterId:', newUser[0].fields.email);
+          return done(null, newUser[0]);
+        } catch (twitterIdError) {
+          if (twitterIdError.message.includes('twitterId') || twitterIdError.message.includes('twitterUsername')) {
+            console.log('⚠️ Twitter fields not found in Airtable, creating user without them');
+            // Create user without Twitter-specific fields
+            const newUser = await userTable.create([
+              {
+                fields: userFields
+              }
+            ]);
+            console.log('✅ New Twitter user created without twitterId:', newUser[0].fields.email);
+            return done(null, newUser[0]);
+          } else {
+            throw twitterIdError;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Twitter OAuth error:', error);
+      return done(error, null);
+    }
+  }));
+} else {
+  console.log('⚠️ Skipping Twitter OAuth strategy configuration due to invalid credentials');
 }
 
 passport.serializeUser((user, done) => {
@@ -861,6 +997,117 @@ app.get('/auth/google/callback',
       let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
       frontendUrl = frontendUrl.replace(/\/+$/, '');
       res.redirect(`${frontendUrl}/#/login?error=oauth_callback_failed`);
+    }
+  }
+);
+
+// Twitter OAuth routes
+app.get('/auth/twitter', (req, res, next) => {
+  console.log('🔄 Twitter OAuth initiated');
+  console.log('🔗 Callback URL will be:', `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`);
+  console.log('🌐 CLIENT_URL:', process.env.CLIENT_URL);
+  console.log('🔑 Twitter Client ID status:', !!process.env.TWITTER_CLIENT_ID);
+  console.log('🔐 Twitter Client Secret status:', !!process.env.TWITTER_CLIENT_SECRET);
+  
+  if (!process.env.TWITTER_CLIENT_ID || process.env.TWITTER_CLIENT_ID.includes('your_')) {
+    console.error('❌ Cannot initiate Twitter OAuth: Missing or invalid credentials');
+    let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+    frontendUrl = frontendUrl.replace(/\/+$/, '');
+    return res.redirect(`${frontendUrl}/#/login?error=twitter_oauth_not_configured`);
+  }
+  
+  try {
+    console.log('🔧 Twitter OAuth params:', { 
+      includeEmail: true,
+      clientId: process.env.TWITTER_CLIENT_ID?.substring(0, 20) + '...'
+    });
+    
+    console.log('🚀 Attempting to authenticate with Twitter...');
+    passport.authenticate('twitter')(req, res, next);
+  } catch (error) {
+    console.error('❌ Error during Twitter OAuth initiation:', error);
+    let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+    frontendUrl = frontendUrl.replace(/\/+$/, '');
+    res.redirect(`${frontendUrl}/#/login?error=twitter_oauth_initiation_failed`);
+  }
+});
+
+app.get('/auth/twitter/callback',
+  (req, res, next) => {
+    console.log('🔄 Twitter OAuth callback received');
+    console.log('📥 Callback query params:', req.query);
+    console.log('📋 Callback URL called:', req.url);
+    
+    // Check for error in callback
+    if (req.query.error || req.query.denied) {
+      console.error('❌ Twitter OAuth error in callback:', req.query.error || 'User denied access');
+      console.error('📄 Error description:', req.query.error_description);
+      let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+      frontendUrl = frontendUrl.replace(/\/+$/, '');
+      return res.redirect(`${frontendUrl}/#/login?error=twitter_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error || 'Access denied')}`);
+    }
+    
+    passport.authenticate('twitter', { 
+      session: false,
+      failureRedirect: `${(process.env.CLIENT_URL || 'https://rawfreedomai.com').replace(/\/+$/, '')}/#/login?error=twitter_oauth_failed`
+    })(req, res, next);
+  },
+  async (req, res) => {
+    try {
+      console.log('🔍 Processing Twitter OAuth callback...');
+      console.log('👤 User object:', req.user);
+      console.log('🔑 User ID:', req.user?.id);
+      console.log('📧 User fields:', req.user?.fields);
+      
+      if (!req.user) {
+        console.error('❌ No user data received from Twitter');
+        let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+        frontendUrl = frontendUrl.replace(/\/+$/, '');
+        return res.redirect(`${frontendUrl}/#/login?error=no_twitter_user_data`);
+      }
+
+      console.log('✅ Twitter user authenticated successfully:', req.user.fields?.email || req.user.fields?.twitterUsername || 'Twitter user');
+      
+      // Generate JWT token for the authenticated user
+      const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      console.log('🎫 Generated JWT token for Twitter user:', req.user.id);
+      
+      // Redirect to frontend with token - using same URL construction logic as Google
+      let frontendUrl = process.env.CLIENT_URL || 'https://rawfreedomai.com';
+      console.log('🌐 Raw CLIENT_URL from env:', JSON.stringify(process.env.CLIENT_URL));
+      console.log('🔧 Before cleanup:', JSON.stringify(frontendUrl));
+      
+      // Handle malformed CLIENT_URL that might contain double URLs
+      if (frontendUrl.includes('https://') && frontendUrl.indexOf('https://') !== frontendUrl.lastIndexOf('https://')) {
+        const firstHttpsIndex = frontendUrl.indexOf('https://');
+        const secondHttpsIndex = frontendUrl.indexOf('https://', firstHttpsIndex + 1);
+        if (secondHttpsIndex !== -1) {
+          frontendUrl = frontendUrl.substring(secondHttpsIndex);
+          console.log('🔧 Fixed duplicate URL issue:', frontendUrl);
+        }
+      }
+      
+      // Clean up trailing slashes and whitespace
+      frontendUrl = frontendUrl.replace(/\/+$/, '').trim();
+      
+      // Validate URL format
+      if (!frontendUrl.startsWith('http')) {
+        frontendUrl = 'https://rawfreedomai.com';
+        console.log('🔧 Invalid URL detected, using fallback:', frontendUrl);
+      }
+      
+      console.log('🔧 After cleanup:', JSON.stringify(frontendUrl));
+      // Use hash routing for React app
+      const redirectUrl = `${frontendUrl}/#/auth-success?token=${encodeURIComponent(token)}`;
+      console.log('🔄 Final Twitter redirect URL (with hash routing):', redirectUrl);
+      
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('❌ Twitter OAuth callback error:', error);
+      console.error('📋 Error stack:', error.stack);
+      let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+      frontendUrl = frontendUrl.replace(/\/+$/, '');
+      res.redirect(`${frontendUrl}/#/login?error=twitter_oauth_callback_failed`);
     }
   }
 );
