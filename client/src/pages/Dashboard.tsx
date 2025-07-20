@@ -444,31 +444,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Active Discount Code Banner */}
-      {activeDiscountCode && user?.tier !== 'paid' && (
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🔥</span>
-                <span className="font-semibold">70% OFF Applied!</span>
-                <span className="text-sm opacity-90">
-                  Code "{activeDiscountCode}" is active - All upgrade buttons will use this discount
-                </span>
-              </div>
-              <button 
-                onClick={() => {
-                  localStorage.removeItem('appliedDiscountCode');
-                  setActiveDiscountCode(null);
-                }}
-                className="text-white/80 hover:text-white text-sm underline"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}

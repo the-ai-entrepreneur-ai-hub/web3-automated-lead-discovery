@@ -73,7 +73,9 @@
       "Bash(cmd.exe /c 'git rm --cached claudecodeui')",
       "Bash(cmd.exe:*)",
       "Bash(touch:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }
