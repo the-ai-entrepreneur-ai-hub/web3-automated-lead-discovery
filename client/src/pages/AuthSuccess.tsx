@@ -7,12 +7,17 @@ const AuthSuccess = () => {
 
   useEffect(() => {
     console.log('🔍 AuthSuccess: Processing authentication...');
+    console.log('🌐 Current URL:', window.location.href);
+    console.log('🔗 Search params:', window.location.search);
+    console.log('📍 Hash:', window.location.hash);
     
     const token = searchParams.get('token');
     const error = searchParams.get('error');
     
     console.log('🎫 Token received:', token ? 'YES' : 'NO');
+    console.log('🎫 Token value:', token);
     console.log('❌ Error received:', error || 'NONE');
+    console.log('🔍 All search params:', Object.fromEntries(searchParams.entries()));
 
     if (error) {
       console.error('OAuth error:', error);
@@ -23,14 +28,23 @@ const AuthSuccess = () => {
     if (token) {
       console.log('💾 Storing token and redirecting to dashboard...');
       localStorage.setItem('token', token);
+      console.log('✅ Token stored in localStorage');
       
-      // Small delay to ensure localStorage is properly set
+      // Longer delay to ensure localStorage is properly set before Dashboard checks
       setTimeout(() => {
+        const storedToken = localStorage.getItem('token');
+        console.log('🔍 Verifying token storage:', storedToken ? 'SUCCESS' : 'FAILED');
         console.log('🔄 Executing redirect to /dashboard');
         navigate('/dashboard', { replace: true });
-      }, 100);
+      }, 200);
     } else {
       console.error('❌ No token found in URL parameters');
+      console.error('🔍 URL breakdown:', {
+        href: window.location.href,
+        search: window.location.search,
+        hash: window.location.hash,
+        pathname: window.location.pathname
+      });
       navigate('/login?error=' + encodeURIComponent('Authentication failed. Please try again.'));
     }
   }, [navigate, searchParams]);
