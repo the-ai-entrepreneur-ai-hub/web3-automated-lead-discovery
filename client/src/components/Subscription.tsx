@@ -235,7 +235,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
-              {isLoading ? 'Starting Trial...' : 'Start 7-Day Free Trial'}
+              {isLoading ? 'Starting Trial...' : 'Start 14-Day Free Trial'}
             </Button>
           ) : (
             <div className="space-y-2">
