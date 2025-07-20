@@ -115,8 +115,17 @@ const validateTwitterConfig = () => {
   const clientId = process.env.TWITTER_CLIENT_ID;
   const clientSecret = process.env.TWITTER_CLIENT_SECRET;
   
+  console.log('🔍 Twitter OAuth Debug:', {
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+    clientIdValue: clientId ? clientId.substring(0, 10) + '...' : 'undefined',
+    clientSecretValue: clientSecret ? clientSecret.substring(0, 10) + '...' : 'undefined',
+    allEnvKeys: Object.keys(process.env).filter(key => key.includes('TWITTER'))
+  });
+  
   if (!clientId || !clientSecret) {
     console.log('⚠️ Twitter OAuth not configured - skipping Twitter authentication');
+    console.log('💡 Missing credentials:', { clientId: !clientId, clientSecret: !clientSecret });
     return false;
   }
   
