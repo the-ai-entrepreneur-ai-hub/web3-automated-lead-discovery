@@ -58,8 +58,6 @@ const Header = () => {
       }
     };
 
-    // Clear any potentially corrupted localStorage data
-    localStorage.removeItem("user");
     fetchUser();
   }, []);
 
