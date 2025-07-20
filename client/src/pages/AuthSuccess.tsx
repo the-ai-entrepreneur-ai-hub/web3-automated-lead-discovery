@@ -11,13 +11,16 @@ const AuthSuccess = () => {
     console.log('🔗 Search params:', window.location.search);
     console.log('📍 Hash:', window.location.hash);
     
-    const token = searchParams.get('token');
-    const error = searchParams.get('error');
+    // Extract token directly from URL to handle double slash issues
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || searchParams.get('token');
+    const error = urlParams.get('error') || searchParams.get('error');
     
     console.log('🎫 Token received:', token ? 'YES' : 'NO');
     console.log('🎫 Token value:', token);
     console.log('❌ Error received:', error || 'NONE');
-    console.log('🔍 All search params:', Object.fromEntries(searchParams.entries()));
+    console.log('🔍 URL search params:', Object.fromEntries(urlParams.entries()));
+    console.log('🔍 React Router params:', Object.fromEntries(searchParams.entries()));
 
     if (error) {
       console.error('OAuth error:', error);
