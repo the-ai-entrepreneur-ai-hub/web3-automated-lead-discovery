@@ -4,7 +4,8 @@ export const config = {
   API_URL: import.meta.env.VITE_API_URL || 'https://web3-automated-lead-discovery-production.up.railway.app',
   STRIPE_PUBLISHABLE_KEY: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_live_51RlQ0ZC1BQAlOs1ZJAlFZgbciKe0xFPBOkYhNlAbwP0FezYKthOrpMukNLzgbg26nAWlw8uFIYhe6uHEEpmTw6lK00AoGgCxoF',
   IS_PRODUCTION: import.meta.env.NODE_ENV === 'production' || import.meta.env.PROD || true,
-  IS_DEVELOPMENT: import.meta.env.NODE_ENV === 'development' || import.meta.env.DEV || false
+  IS_DEVELOPMENT: import.meta.env.NODE_ENV === 'development' || import.meta.env.DEV || false,
+  CLIENT_DOMAIN: 'https://rawfreedomai.com'
 };
 
 // Debug logging

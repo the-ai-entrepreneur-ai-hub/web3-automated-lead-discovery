@@ -51,8 +51,8 @@ app.use(compression()); // Compress responses
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://the-ai-entrepreneur-ai-hub.github.io',
-  'https://the-ai-entrepreneur-ai-hub.github.io/web3-automated-lead-discovery',
+  'https://rawfreedomai.com',
+  'https://www.rawfreedomai.com',
   'https://web3-automated-lead-discovery.netlify.app',
   'https://web3-prospector.netlify.app',
   'https://dulcet-madeleine-2018aa.netlify.app',
@@ -384,14 +384,14 @@ app.get('/debug/env', (req, res) => {
   res.json({
     CLIENT_URL_RAW: rawClientUrl,
     CLIENT_URL_HAS_DOUBLE_URL: hasDoubleUrl,
-    CLIENT_URL_SHOULD_BE: 'https://dulcet-modelsine-2018aa.netlify.app',
+    CLIENT_URL_SHOULD_BE: 'https://rawfreedomai.com',
     API_BASE_URL: process.env.API_BASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
     RAILWAY_PROJECT_ID: !!process.env.RAILWAY_PROJECT_ID,
     allClientEnvVars: Object.keys(process.env).filter(key => key.includes('CLIENT')),
     CRITICAL_ISSUE: hasDoubleUrl ? 'CLIENT_URL contains duplicate URLs - FIX IMMEDIATELY' : 'CLIENT_URL format looks OK',
-    FIX_INSTRUCTION: hasDoubleUrl ? 'Set CLIENT_URL to: https://dulcet-modelsine-2018aa.netlify.app' : 'Environment variable format is correct'
+    FIX_INSTRUCTION: hasDoubleUrl ? 'Set CLIENT_URL to: https://rawfreedomai.com' : 'Environment variable format is correct'
   });
 });
 
@@ -540,7 +540,7 @@ app.get('/auth/google/callback',
       console.log('🎫 Generated JWT token for user:', req.user.id);
       
       // Redirect to frontend with token - CRITICAL URL CONSTRUCTION FIX
-      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-modelsine-2018aa.netlify.app';
+      let frontendUrl = process.env.CLIENT_URL || 'https://rawfreedomai.com';
       console.log('🌐 Raw CLIENT_URL from env:', JSON.stringify(process.env.CLIENT_URL));
       console.log('🔧 Before cleanup:', JSON.stringify(frontendUrl));
       
@@ -560,7 +560,7 @@ app.get('/auth/google/callback',
       
       // Validate URL format
       if (!frontendUrl.startsWith('http')) {
-        frontendUrl = 'https://dulcet-modelsine-2018aa.netlify.app';
+        frontendUrl = 'https://rawfreedomai.com';
         console.log('🔧 Invalid URL detected, using fallback:', frontendUrl);
       }
       
@@ -1635,9 +1635,12 @@ setInterval(cleanupExpiredVerificationCodes, 30 * 60 * 1000);
 // Run cleanup on startup
 cleanupExpiredVerificationCodes();
 
-const server = app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening at http://0.0.0.0:${port}`);
   console.log('🚀 Server started successfully');
+  console.log('🔧 Environment:', process.env.NODE_ENV);
+  console.log('🔧 Platform:', process.platform);
+  console.log('🔧 Node version:', process.version);
 });
 
 // Graceful shutdown handling for Railway
