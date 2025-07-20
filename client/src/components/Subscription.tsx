@@ -186,8 +186,8 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
           {!isPaid && (
             <div className="space-y-3">
               {/* Promotional Discount Banner */}
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg text-center">
-                <div className="font-bold text-lg">🔥 LIMITED TIME OFFER!</div>
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-lg text-center border border-blue-300">
+                <div className="font-bold text-lg">💎 SPECIAL OFFER!</div>
                 <div className="text-sm">Use code <span className="font-mono bg-white/20 px-2 py-1 rounded">ProspectingGOAT12</span> for 70% OFF your first month!</div>
                 <div className="text-xs opacity-90 mt-1">Just $29.70 instead of $99 for your first month</div>
               </div>
