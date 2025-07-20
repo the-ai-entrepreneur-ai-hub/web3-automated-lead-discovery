@@ -97,10 +97,20 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         return;
       }
 
-      const { url } = await stripeApi.createCheckoutSession(token, discountCode.trim() || undefined);
+      const response = await stripeApi.createCheckoutSession(token, discountCode.trim() || undefined);
       
-      // Redirect to Stripe Checkout
-      window.location.href = url;
+      if (response.success && response.url) {
+        console.log('💳 Subscription checkout details:', {
+          scenario: response.scenario,
+          amount: response.amount,
+          trialDays: response.trialDays,
+          hasDiscount: response.hasDiscount
+        });
+        // Redirect to Stripe Checkout
+        window.location.href = response.url;
+      } else {
+        throw new Error(response.error || 'Failed to get checkout URL');
+      }
     } catch (err) {
       console.error('Error creating checkout session:', err);
       setError('Failed to create checkout session. Please try again.');
