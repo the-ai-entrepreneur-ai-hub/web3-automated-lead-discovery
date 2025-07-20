@@ -180,6 +180,13 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         <div className="space-y-4">
           {!isPaid && (
             <div className="space-y-3">
+              {/* Promotional Discount Banner */}
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-lg text-center">
+                <div className="font-bold text-lg">🔥 LIMITED TIME OFFER!</div>
+                <div className="text-sm">Use code <span className="font-mono bg-white/20 px-2 py-1 rounded">ProspectingGOAT12</span> for 70% OFF your first month!</div>
+                <div className="text-xs opacity-90 mt-1">Just $29.70 instead of $99 for your first month</div>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="discount-code">Discount Code (Optional)</Label>
                 <div className="flex space-x-2">
@@ -219,7 +226,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
-              {isLoading ? 'Processing...' : 'Upgrade to Pro - $99/month'}
+              {isLoading ? 'Starting Trial...' : 'Start 7-Day Free Trial'}
             </Button>
           ) : (
             <div className="space-y-2">
