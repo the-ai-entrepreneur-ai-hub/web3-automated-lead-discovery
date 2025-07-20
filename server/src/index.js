@@ -1544,9 +1544,12 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
         firstName: user.fields.firstName || '',
         lastName: user.fields.lastName || '',
       },
-      subscription_data: {
-        trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS,
-      },
+      // Only add subscription_data if we have trial days
+      ...(STRIPE_CONFIG.FREE_TRIAL_DAYS && STRIPE_CONFIG.FREE_TRIAL_DAYS > 0 ? {
+        subscription_data: {
+          trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS,
+        }
+      } : {}),
       allow_promotion_codes: true, // Allow users to enter promo codes
       billing_address_collection: 'required',
     };
