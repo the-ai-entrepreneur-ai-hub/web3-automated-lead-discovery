@@ -62,7 +62,7 @@ const Services = () => {
         "Increase conversion rates by 40%"
       ],
       pricing: "Starting at $99/month",
-      ctaText: "Get Started Now",
+      ctaText: "Start Free Trial",
       description: "Our AI-powered lead discovery engine continuously scans the Web3 ecosystem to identify new projects, funding rounds, and business opportunities. Using advanced machine learning algorithms, we analyze thousands of data points to surface the most relevant prospects for your business."
     },
     {
@@ -287,7 +287,7 @@ const Services = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Get instant access to premium Web3 lead intelligence.
+                          Start with a 7-day free trial. No credit card required.
                         </p>
                       </div>
                     </CardContent>
@@ -433,7 +433,7 @@ const Services = () => {
               className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-8 py-3 text-lg font-semibold"
               onClick={() => navigate('/register')}
             >
-              Get Started Today
+              Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
@@ -446,7 +446,7 @@ const Services = () => {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            Premium access • Cancel anytime • Secure payment
+            7-day free trial • No credit card required • Cancel anytime
           </p>
         </div>
       </main>

@@ -43,7 +43,7 @@ const Pricing = () => {
         "Funding data when available"
       ],
       limitations: [],
-      cta: "Upgrade to Pro",
+      cta: "Start 7-Day Free Trial",
       popular: true
     }
   ];

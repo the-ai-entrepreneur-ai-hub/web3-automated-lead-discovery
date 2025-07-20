@@ -43,7 +43,7 @@ const Hero = () => {
             className="btn-web3 px-8 py-4 text-lg font-semibold"
             onClick={() => navigate('/register')}
           >
-            Get Started Now
+            Start Free Trial
           </Button>
           <Button 
             variant="outline" 

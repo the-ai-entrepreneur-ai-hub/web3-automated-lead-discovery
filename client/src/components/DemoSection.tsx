@@ -227,7 +227,7 @@ const DemoSection = () => {
                   className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-8 py-3 text-lg font-semibold group transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
                   onClick={() => navigate('/register')}
                 >
-                  Get Started Today
+                  Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button 
@@ -241,7 +241,7 @@ const DemoSection = () => {
               </div>
 
               <p className="text-sm text-muted-foreground mt-4">
-                Premium access • Cancel anytime • Secure payment
+                7-day free trial • No credit card required • Cancel anytime
               </p>
             </div>
           </div>
