@@ -12,6 +12,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showGoogleTerms, setShowGoogleTerms] = useState(false);
+  const [googleTermsAccepted, setGoogleTermsAccepted] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -66,22 +68,37 @@ const Login = () => {
 
   const handleSocialAuth = (provider: string) => {
     if (provider === 'Google') {
-      // Clear any existing errors
-      setError("");
-      setIsLoading(true);
-      
-      try {
-        // Redirect to Google OAuth
-        console.log('🔄 Initiating Google OAuth...');
-        console.log('🌐 OAuth URL:', `${config.API_URL}/auth/google`);
-        window.location.href = `${config.API_URL}/auth/google`;
-      } catch (error) {
-        console.error('❌ Error initiating Google OAuth:', error);
-        setError('Failed to initialize Google authentication. Please try again.');
-        setIsLoading(false);
-      }
+      // For existing users logging in, check if they need to accept terms
+      // (This mainly applies to new users coming from login page)
+      setShowGoogleTerms(true);
     } else {
       alert(`${provider} authentication is not yet implemented. Please use email/password login for now.`);
+    }
+  };
+
+  const handleGoogleOAuthProceed = () => {
+    if (!googleTermsAccepted) {
+      setError("You must accept the Terms of Service and Privacy Policy to continue with Google authentication.");
+      return;
+    }
+    
+    // Clear any existing errors
+    setError("");
+    setIsLoading(true);
+    
+    try {
+      // Store terms acceptance for OAuth callback
+      sessionStorage.setItem('termsAccepted', 'true');
+      sessionStorage.setItem('authFlow', 'login');
+      
+      // Redirect to Google OAuth
+      console.log('🔄 Initiating Google OAuth...');
+      console.log('🌐 OAuth URL:', `${config.API_URL}/auth/google`);
+      window.location.href = `${config.API_URL}/auth/google`;
+    } catch (error) {
+      console.error('❌ Error initiating Google OAuth:', error);
+      setError('Failed to initialize Google authentication. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -188,6 +205,52 @@ const Login = () => {
         </Card>
       </div>
       </div>
+
+      {/* Google OAuth Terms Modal */}
+      {showGoogleTerms && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Terms and Conditions</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Before continuing with Google authentication, you must accept our Terms of Service and Privacy Policy.
+            </p>
+            <div className="flex items-start space-x-2 mb-6">
+              <input 
+                type="checkbox" 
+                checked={googleTermsAccepted}
+                onChange={(e) => setGoogleTermsAccepted(e.target.checked)}
+                className="mt-1 rounded border-border" 
+              />
+              <span className="text-sm text-muted-foreground">
+                I agree to the{" "}
+                <Link to="/terms" className="text-primary hover:underline" target="_blank">Terms of Service</Link>
+                {" "}and{" "}
+                <Link to="/privacy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowGoogleTerms(false);
+                  setGoogleTermsAccepted(false);
+                  setError("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleGoogleOAuthProceed}
+                disabled={!googleTermsAccepted}
+                className="flex-1"
+              >
+                Continue with Google
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

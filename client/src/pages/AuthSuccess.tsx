@@ -22,6 +22,25 @@ const AuthSuccess = () => {
         console.log('🎫 Token received:', token ? 'YES' : 'NO');
         console.log('❌ Error received:', error || 'NONE');
 
+        // Check if this is a new user registration that needs terms acceptance
+        const termsAccepted = sessionStorage.getItem('termsAccepted');
+        const authFlow = sessionStorage.getItem('authFlow');
+        
+        if (!termsAccepted && authFlow === 'register') {
+          console.error('❌ Terms not accepted during OAuth flow');
+          setStatus('Terms acceptance required. Redirecting...');
+          sessionStorage.removeItem('termsAccepted');
+          sessionStorage.removeItem('authFlow');
+          setTimeout(() => {
+            navigate('/register?error=' + encodeURIComponent('You must accept the Terms of Service to create an account.'));
+          }, 1000);
+          return;
+        }
+
+        // Clean up session storage
+        sessionStorage.removeItem('termsAccepted');
+        sessionStorage.removeItem('authFlow');
+
         if (error) {
           console.error('OAuth error:', error);
           setStatus('Authentication failed. Redirecting...');
