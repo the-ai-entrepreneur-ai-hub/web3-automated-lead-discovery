@@ -267,8 +267,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           // Always set tier to paid for completed checkouts (trial or paid)
           let subscriptionUpdate = {
             tier: 'paid', // Always upgrade for completed checkout
-            subscriptionStatus: 'active' // Default to active
-            // Temporarily removing date fields to fix core tier update
+            subscriptionStatus: 'active', // Default to active
+            lastPaymentDate: new Date().toISOString()
           };
           
           // Get detailed subscription info if available
@@ -286,8 +286,9 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
               
               subscriptionUpdate = {
                 tier: 'paid', // Always paid for any subscription
-                subscriptionStatus: subscription.status
-                // Temporarily removing trialEnd and lastPaymentDate to fix core tier update
+                subscriptionStatus: subscription.status,
+                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+                lastPaymentDate: new Date().toISOString()
               };
               console.log(`📝 Subscription update object:`, subscriptionUpdate);
             } catch (subError) {
