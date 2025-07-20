@@ -38,7 +38,15 @@ const AuthSuccess = () => {
         const storedToken = localStorage.getItem('token');
         console.log('🔍 Verifying token storage:', storedToken ? 'SUCCESS' : 'FAILED');
         console.log('🔄 Executing redirect to /dashboard');
+        
+        // Try React Router navigation first
         navigate('/dashboard', { replace: true });
+        
+        // Fallback: Force redirect with window.location after a short delay
+        setTimeout(() => {
+          console.log('🔄 Fallback: Using window.location redirect');
+          window.location.href = '#/dashboard';
+        }, 500);
       }, 200);
     } else {
       console.error('❌ No token found in URL parameters');
