@@ -244,7 +244,14 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object;
-        console.log('💳 Payment succeeded:', session.id);
+        console.log('💳 Checkout session completed:', session.id);
+        console.log('📋 Session details:', {
+          customer: session.customer,
+          subscription: session.subscription,
+          payment_status: session.payment_status,
+          mode: session.mode,
+          metadata: session.metadata
+        });
         
         // Validate required metadata
         if (!session.metadata?.userId) {
@@ -252,22 +259,26 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           throw new Error('Missing userId in session metadata');
         }
         
-        // Update user tier to paid with retry logic
+        // Update user with customer ID first (important for webhook linking)
         try {
           const updateResult = await userTable.update([
             {
               id: session.metadata.userId,
               fields: {
-                tier: 'paid',
                 stripeCustomerId: session.customer,
-                stripeSubscriptionId: session.subscription,
-                lastPaymentDate: new Date().toISOString(),
-                subscriptionStatus: 'active'
+                stripeSubscriptionId: session.subscription || null,
+                lastCheckoutSession: session.id,
+                ...(session.subscription ? {} : {
+                  // If no subscription, this might be a one-time payment
+                  tier: 'paid',
+                  subscriptionStatus: 'active',
+                  lastPaymentDate: new Date().toISOString()
+                })
               }
             }
           ]);
           
-          console.log(`✅ User ${session.metadata.userEmail} upgraded to paid tier`);
+          console.log(`✅ User ${session.metadata.userEmail} checkout completed`);
           console.log('📊 Database update result:', updateResult[0]?.id);
           
           // Send payment receipt email
@@ -365,30 +376,48 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
       case 'customer.subscription.created':
         const newSubscription = event.data.object;
         console.log(`🆕 New subscription created: ${newSubscription.id} - Status: ${newSubscription.status}`);
+        console.log(`📋 Subscription details:`, {
+          customer: newSubscription.customer,
+          status: newSubscription.status,
+          trial_end: newSubscription.trial_end,
+          current_period_start: newSubscription.current_period_start,
+          current_period_end: newSubscription.current_period_end
+        });
         
         try {
           const users = await userTable.select({
             filterByFormula: `{stripeCustomerId} = "${newSubscription.customer}"`
           }).firstPage();
           
+          console.log(`🔍 Found ${users.length} users for customer ${newSubscription.customer}`);
+          
           if (users.length > 0) {
             // For trial subscriptions, set tier to paid immediately (trial access)
             const isTrialing = newSubscription.status === 'trialing';
-            await userTable.update([
+            const updateData = {
+              tier: 'paid', // Give access during trial
+              stripeSubscriptionId: newSubscription.id,
+              subscriptionStatus: newSubscription.status,
+              trialEnd: isTrialing ? new Date(newSubscription.trial_end * 1000).toISOString() : null
+            };
+            
+            console.log(`📝 Updating user with data:`, updateData);
+            
+            const updateResult = await userTable.update([
               {
                 id: users[0].id,
-                fields: {
-                  tier: 'paid', // Give access during trial
-                  stripeSubscriptionId: newSubscription.id,
-                  subscriptionStatus: newSubscription.status,
-                  trialEnd: isTrialing ? new Date(newSubscription.trial_end * 1000).toISOString() : null
-                }
+                fields: updateData
               }
             ]);
+            
             console.log(`✅ User subscription created ${isTrialing ? '(trialing)' : '(active)'}: ${users[0].fields.email}`);
+            console.log(`📊 Update result:`, updateResult[0]?.id);
+          } else {
+            console.error(`❌ No user found for Stripe customer: ${newSubscription.customer}`);
           }
         } catch (error) {
           console.error('❌ Error handling subscription creation:', error);
+          console.error('Error details:', error.message);
         }
         break;
       
@@ -1622,6 +1651,8 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
         firstName: user.fields.firstName || '',
         lastName: user.fields.lastName || '',
       },
+      // Create or update customer to ensure proper linking
+      customer_creation: 'always',
       // Only add subscription_data if we have trial days
       ...(STRIPE_CONFIG.FREE_TRIAL_DAYS && STRIPE_CONFIG.FREE_TRIAL_DAYS > 0 ? {
         subscription_data: {
@@ -1636,10 +1667,16 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
 
     // Apply discount code if provided (case-insensitive)
     if (discountCode) {
+      console.log(`🏷️ Discount code provided: ${discountCode}`);
+      console.log(`🏷️ Available codes:`, Object.keys(STRIPE_CONFIG.DISCOUNT_CODES));
+      
       const normalizedCode = discountCode.toUpperCase();
       const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
         code => code.toUpperCase() === normalizedCode
       );
+      
+      console.log(`🏷️ Normalized code: ${normalizedCode}`);
+      console.log(`🏷️ Matched config code: ${configCode || 'NONE'}`);
       
       if (configCode) {
         try {
@@ -1712,11 +1749,16 @@ app.post('/validate-discount-code', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Discount code is required' });
     }
 
+    console.log(`🏷️ Validating discount code: ${discountCode}`);
+    console.log(`🏷️ Available codes:`, Object.keys(STRIPE_CONFIG.DISCOUNT_CODES));
+    
     // Check if discount code exists in our configuration (case-insensitive)
     const normalizedCode = discountCode.toUpperCase();
     const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
       code => code.toUpperCase() === normalizedCode
     );
+    
+    console.log(`🏷️ Normalized: ${normalizedCode}, Found: ${configCode || 'NONE'}`);
     
     if (configCode) {
       const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[configCode];
