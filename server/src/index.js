@@ -414,7 +414,9 @@ app.get('/auth/google', (req, res, next) => {
   
   if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.includes('your_')) {
     console.error('❌ Cannot initiate Google OAuth: Missing or invalid credentials');
-    return res.redirect(`${process.env.CLIENT_URL || 'https://web3-prospector.netlify.app'}/login?error=oauth_not_configured`);
+    let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+    frontendUrl = frontendUrl.replace(/\/+$/, '');
+    return res.redirect(`${frontendUrl}/login?error=oauth_not_configured`);
   }
   
   try {
@@ -430,7 +432,9 @@ app.get('/auth/google', (req, res, next) => {
     })(req, res, next);
   } catch (error) {
     console.error('❌ Error during Google OAuth initiation:', error);
-    res.redirect(`${process.env.CLIENT_URL || 'https://web3-prospector.netlify.app'}/login?error=oauth_initiation_failed`);
+    let frontendUrl = process.env.CLIENT_URL || 'https://web3-prospector.netlify.app';
+    frontendUrl = frontendUrl.replace(/\/+$/, '');
+    res.redirect(`${frontendUrl}/login?error=oauth_initiation_failed`);
   }
 });
 
@@ -444,13 +448,14 @@ app.get('/auth/google/callback',
     if (req.query.error) {
       console.error('❌ Google OAuth error in callback:', req.query.error);
       console.error('📄 Error description:', req.query.error_description);
-      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      frontendUrl = frontendUrl.replace(/\/+$/, '');
       return res.redirect(`${frontendUrl}/login?error=google_oauth_error&details=${encodeURIComponent(req.query.error_description || req.query.error)}`);
     }
     
     passport.authenticate('google', { 
       session: false,
-      failureRedirect: `${process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app'}/login?error=oauth_failed`
+      failureRedirect: `${(process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app').replace(/\/+$/, '')}/login?error=oauth_failed`
     })(req, res, next);
   },
   async (req, res) => {
@@ -462,7 +467,8 @@ app.get('/auth/google/callback',
       
       if (!req.user) {
         console.error('❌ No user data received from Google');
-        const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+        let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+        frontendUrl = frontendUrl.replace(/\/+$/, '');
         return res.redirect(`${frontendUrl}/login?error=no_user_data`);
       }
 
@@ -473,7 +479,9 @@ app.get('/auth/google/callback',
       console.log('🎫 Generated JWT token for user:', req.user.id);
       
       // Redirect to frontend with token
-      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      // Remove trailing slashes
+      frontendUrl = frontendUrl.replace(/\/+$/, '');
       const redirectUrl = `${frontendUrl}/auth-success?token=${token}`;
       console.log('🔄 Redirecting to:', redirectUrl);
       console.log('🌐 CLIENT_URL from env:', process.env.CLIENT_URL);
@@ -482,7 +490,8 @@ app.get('/auth/google/callback',
     } catch (error) {
       console.error('❌ Google OAuth callback error:', error);
       console.error('📋 Error stack:', error.stack);
-      const frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      frontendUrl = frontendUrl.replace(/\/+$/, '');
       res.redirect(`${frontendUrl}/login?error=oauth_callback_failed`);
     }
   }
