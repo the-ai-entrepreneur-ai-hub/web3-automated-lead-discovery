@@ -1618,7 +1618,7 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     console.log(`💳 Creating checkout session for user: ${user.fields.email}`);
     
     // Create or get existing Stripe customer
-    let customerId = user.fields.stripeCustomerId;
+    let customerId = user.fields.stripeCustomerId || null;
     if (!customerId) {
       console.log(`👤 Creating new Stripe customer for: ${user.fields.email}`);
       const customer = await stripe.customers.create({
@@ -1631,15 +1631,20 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       });
       customerId = customer.id;
       
-      // Update user with customer ID immediately
-      await userTable.update([
-        {
-          id: req.user.id,
-          fields: {
-            stripeCustomerId: customerId
+      // Update user with customer ID immediately (with fallback for missing field)
+      try {
+        await userTable.update([
+          {
+            id: req.user.id,
+            fields: {
+              stripeCustomerId: customerId
+            }
           }
-        }
-      ]);
+        ]);
+      } catch (fieldError) {
+        console.warn('⚠️ stripeCustomerId field missing in Airtable, continuing without storing...');
+        console.warn('Please add stripeCustomerId field to Users table');
+      }
       console.log(`✅ Created Stripe customer: ${customerId}`);
     } else {
       console.log(`♻️ Using existing Stripe customer: ${customerId}`);
