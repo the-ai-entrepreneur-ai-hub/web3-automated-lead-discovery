@@ -259,8 +259,29 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
           throw new Error('Missing userId in session metadata');
         }
         
-        // Update user with customer ID first (important for webhook linking)
+        // Update user with customer ID and subscription info
         try {
+          // Get subscription details if available
+          let subscriptionUpdate = {};
+          if (session.subscription) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription);
+              console.log(`📋 Retrieved subscription details:`, {
+                id: subscription.id,
+                status: subscription.status,
+                trial_end: subscription.trial_end
+              });
+              
+              subscriptionUpdate = {
+                tier: 'paid', // Give access immediately (for trials or active)
+                subscriptionStatus: subscription.status,
+                trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+              };
+            } catch (subError) {
+              console.error('❌ Error retrieving subscription:', subError);
+            }
+          }
+          
           const updateResult = await userTable.update([
             {
               id: session.metadata.userId,
@@ -268,12 +289,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
                 stripeCustomerId: session.customer,
                 stripeSubscriptionId: session.subscription || null,
                 lastCheckoutSession: session.id,
-                ...(session.subscription ? {} : {
-                  // If no subscription, this might be a one-time payment
-                  tier: 'paid',
-                  subscriptionStatus: 'active',
-                  lastPaymentDate: new Date().toISOString()
-                })
+                lastPaymentDate: new Date().toISOString(),
+                ...subscriptionUpdate
               }
             }
           ]);
