@@ -298,7 +298,7 @@ const Dashboard = () => {
         return;
       }
 
-      setPaymentStatus('Redirecting to payment...');
+      setPaymentStatus('Redirecting to secure payment...');
       const response = await stripeApi.createCheckoutSession(token);
       
       if (response.success && response.url) {
@@ -384,6 +384,8 @@ const Dashboard = () => {
             ? 'bg-green-500/10 border-green-500/20 text-green-700' 
             : paymentStatus.includes('canceled') 
             ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700'
+            : paymentStatus.includes('Redirecting') || paymentStatus.includes('secure')
+            ? 'bg-blue-500/10 border-blue-500/20 text-blue-700'
             : 'bg-red-500/10 border-red-500/20 text-red-700'
         }`}>
           <div className="flex items-center justify-between">
