@@ -1627,10 +1627,6 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if user is already subscribed
-    if (user.fields.tier === 'paid' && user.fields.subscriptionStatus === 'active') {
-      return res.status(400).json({ error: 'User already has active subscription' });
-    }
 
     console.log(`💳 Creating checkout session for user: ${user.fields.email}`);
     console.log(`📋 User fields available:`, Object.keys(user.fields));
@@ -1639,6 +1635,12 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       stripeCustomerId: user.fields.stripeCustomerId || 'MISSING',
       subscriptionStatus: user.fields.subscriptionStatus || 'MISSING'
     });
+    
+    // Check if user already has active subscription
+    if (user.fields.tier === 'paid' && user.fields.subscriptionStatus === 'active') {
+      console.log('⚠️ User already has active paid subscription');
+      return res.status(400).json({ error: 'User already has active subscription' });
+    }
     
     // Create or get existing Stripe customer
     let customerId = user.fields.stripeCustomerId || null;
@@ -1708,8 +1710,9 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
           trial_period_days: STRIPE_CONFIG.FREE_TRIAL_DAYS,
         }
       } : {}),
-      allow_promotion_codes: true, // Allow users to enter promo codes
       billing_address_collection: 'required',
+      // Only add allow_promotion_codes if no discount is being applied
+      ...(discountCode ? {} : { allow_promotion_codes: true }),
     };
     
     console.log(`🏷️ Using ${STRIPE_CONFIG.PRICE_ID ? 'existing Price ID' : 'dynamic pricing'}: $${STRIPE_CONFIG.MONTHLY_PRICE / 100}/month`);
