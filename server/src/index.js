@@ -50,7 +50,9 @@ app.use(compression()); // Compress responses
 // Configure CORS to allow credentials
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:3000', 
+  'http://localhost:3000',
+  'https://the-ai-entrepreneur-ai-hub.github.io',
+  'https://the-ai-entrepreneur-ai-hub.github.io/web3-automated-lead-discovery',
   'https://web3-automated-lead-discovery.netlify.app',
   'https://web3-prospector.netlify.app',
   'https://dulcet-madeleine-2018aa.netlify.app',
@@ -360,15 +362,21 @@ app.get('/debug/oauth', (req, res) => {
 
 // Debug endpoint to check environment variables
 app.get('/debug/env', (req, res) => {
+  const rawClientUrl = process.env.CLIENT_URL;
+  const hasDoubleUrl = rawClientUrl && rawClientUrl.includes('https://') && 
+                      rawClientUrl.indexOf('https://') !== rawClientUrl.lastIndexOf('https://');
+  
   res.json({
-    CLIENT_URL: process.env.CLIENT_URL,
+    CLIENT_URL_RAW: rawClientUrl,
+    CLIENT_URL_HAS_DOUBLE_URL: hasDoubleUrl,
+    CLIENT_URL_SHOULD_BE: 'https://dulcet-modelsine-2018aa.netlify.app',
     API_BASE_URL: process.env.API_BASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
     RAILWAY_PROJECT_ID: !!process.env.RAILWAY_PROJECT_ID,
     allClientEnvVars: Object.keys(process.env).filter(key => key.includes('CLIENT')),
-    redirectWillGoTo: `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth-success?token=EXAMPLE`,
-    problem: process.env.CLIENT_URL === 'https://rawfreedomai.com' ? 'CLIENT_URL is set to wrong domain!' : 'CLIENT_URL looks OK'
+    CRITICAL_ISSUE: hasDoubleUrl ? 'CLIENT_URL contains duplicate URLs - FIX IMMEDIATELY' : 'CLIENT_URL format looks OK',
+    FIX_INSTRUCTION: hasDoubleUrl ? 'Set CLIENT_URL to: https://dulcet-modelsine-2018aa.netlify.app' : 'Environment variable format is correct'
   });
 });
 
@@ -516,21 +524,33 @@ app.get('/auth/google/callback',
       const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
       console.log('🎫 Generated JWT token for user:', req.user.id);
       
-      // Redirect to frontend with token
-      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-madeleine-2018aa.netlify.app';
+      // Redirect to frontend with token - CRITICAL URL CONSTRUCTION FIX
+      let frontendUrl = process.env.CLIENT_URL || 'https://dulcet-modelsine-2018aa.netlify.app';
       console.log('🌐 Raw CLIENT_URL from env:', JSON.stringify(process.env.CLIENT_URL));
       console.log('🔧 Before cleanup:', JSON.stringify(frontendUrl));
       
-      // More aggressive cleanup - remove all trailing slashes
+      // CRITICAL FIX: Handle malformed CLIENT_URL that might contain double URLs
+      if (frontendUrl.includes('https://') && frontendUrl.indexOf('https://') !== frontendUrl.lastIndexOf('https://')) {
+        // Extract the first valid URL if CLIENT_URL contains multiple URLs
+        const firstHttpsIndex = frontendUrl.indexOf('https://');
+        const secondHttpsIndex = frontendUrl.indexOf('https://', firstHttpsIndex + 1);
+        if (secondHttpsIndex !== -1) {
+          frontendUrl = frontendUrl.substring(secondHttpsIndex);
+          console.log('🔧 Fixed duplicate URL issue:', frontendUrl);
+        }
+      }
+      
+      // Clean up trailing slashes and whitespace
       frontendUrl = frontendUrl.replace(/\/+$/, '').trim();
       
-      // Ensure we have a clean URL without trailing slash
-      if (frontendUrl.endsWith('/')) {
-        frontendUrl = frontendUrl.slice(0, -1);
+      // Validate URL format
+      if (!frontendUrl.startsWith('http')) {
+        frontendUrl = 'https://dulcet-modelsine-2018aa.netlify.app';
+        console.log('🔧 Invalid URL detected, using fallback:', frontendUrl);
       }
       
       console.log('🔧 After cleanup:', JSON.stringify(frontendUrl));
-      const redirectUrl = `${frontendUrl}/auth-success?token=${token}`;
+      const redirectUrl = `${frontendUrl}/auth-success?token=${encodeURIComponent(token)}`;
       console.log('🔄 Final redirect URL:', redirectUrl);
       
       res.redirect(redirectUrl);
