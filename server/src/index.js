@@ -1616,6 +1616,34 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     }
 
     console.log(`💳 Creating checkout session for user: ${user.fields.email}`);
+    
+    // Create or get existing Stripe customer
+    let customerId = user.fields.stripeCustomerId;
+    if (!customerId) {
+      console.log(`👤 Creating new Stripe customer for: ${user.fields.email}`);
+      const customer = await stripe.customers.create({
+        email: user.fields.email,
+        name: `${user.fields.firstName || ''} ${user.fields.lastName || ''}`.trim(),
+        metadata: {
+          userId: req.user.id,
+          airtableId: req.user.id
+        }
+      });
+      customerId = customer.id;
+      
+      // Update user with customer ID immediately
+      await userTable.update([
+        {
+          id: req.user.id,
+          fields: {
+            stripeCustomerId: customerId
+          }
+        }
+      ]);
+      console.log(`✅ Created Stripe customer: ${customerId}`);
+    } else {
+      console.log(`♻️ Using existing Stripe customer: ${customerId}`);
+    }
 
     // Create session configuration - use Price ID if available, otherwise create price dynamically
     const sessionConfig = {
@@ -1644,15 +1672,13 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
       mode: 'subscription',
       success_url: STRIPE_CONFIG.SUCCESS_URL,
       cancel_url: STRIPE_CONFIG.CANCEL_URL,
-      customer_email: user.fields.email,
+      customer: customerId, // Use the customer ID we created/retrieved
       metadata: {
         userId: req.user.id,
         userEmail: user.fields.email,
         firstName: user.fields.firstName || '',
         lastName: user.fields.lastName || '',
       },
-      // Create or update customer to ensure proper linking
-      customer_creation: 'always',
       // Only add subscription_data if we have trial days
       ...(STRIPE_CONFIG.FREE_TRIAL_DAYS && STRIPE_CONFIG.FREE_TRIAL_DAYS > 0 ? {
         subscription_data: {
