@@ -26,7 +26,7 @@ const About = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
-                Start Your Free Trial
+                Get Started Today
               </Button>
               <Button variant="outline" className="border-primary/20 text-primary hover:bg-primary/10">
                 Learn More

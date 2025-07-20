@@ -210,7 +210,7 @@ const ContactEnrichment = () => {
               className="border-blue-500/30 text-blue-600 hover:bg-blue-50"
               onClick={() => navigate('/register')}
             >
-              Start Free Trial
+              Get Started Today
             </Button>
           </div>
         </div>

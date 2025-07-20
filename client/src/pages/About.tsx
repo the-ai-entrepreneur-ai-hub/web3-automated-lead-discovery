@@ -331,7 +331,7 @@ const About = () => {
               className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg"
               onClick={() => navigate('/register')}
             >
-              Start Your Free Trial
+              Get Started Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
