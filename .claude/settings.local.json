@@ -75,7 +75,9 @@
       "Bash(touch:*)",
       "Bash(grep:*)",
       "Bash(npm run lint)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm search:*)"
     ],
     "deny": []
   }
