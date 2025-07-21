@@ -1915,12 +1915,46 @@ app.get('/export-premium', authenticateToken, async (req, res) => {
   }
 });
 
-// Logout endpoint (mainly for server-side token invalidation if needed)
-app.post('/logout', authenticateToken, (req, res) => {
-  // In a stateless JWT setup, logout is typically handled client-side
-  // But we can log the action for security monitoring
-  console.log('User logged out:', req.user.id);
-  res.json({ message: 'Logged out successfully' });
+// Enhanced logout endpoint with reason tracking
+app.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const userId = req.user.id;
+    
+    console.log('🚪 User logout initiated:', {
+      userId: userId,
+      reason: reason || 'No reason provided',
+      timestamp: new Date().toISOString(),
+      userAgent: req.headers['user-agent']
+    });
+    
+    // Optional: Update user's last logout time in database
+    try {
+      await userTable.update([{
+        id: userId,
+        fields: {
+          lastLogoutDate: new Date().toISOString(),
+          lastLogoutReason: reason || 'User initiated'
+        }
+      }]);
+      console.log('✅ User logout data updated in database');
+    } catch (updateError) {
+      console.log('⚠️ Failed to update logout data in database:', updateError.message);
+      // Don't fail the logout if database update fails
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Logged out successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Logout endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process logout',
+      message: 'Logout completed on client side despite server error'
+    });
+  }
 });
 
 // Debug endpoint to check for duplicate users
