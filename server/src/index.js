@@ -2225,35 +2225,91 @@ app.get('/subscription-status', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log('🔍 Fetching subscription status for user:', user.fields.email);
+    console.log('📋 User fields:', {
+      tier: user.fields.tier,
+      subscriptionStatus: user.fields.subscriptionStatus,
+      stripeSubscriptionId: user.fields.stripeSubscriptionId,
+      trialEndDate: user.fields.trialEndDate
+    });
+
+    // Base subscription status from user data
     let subscriptionStatus = {
       tier: user.fields.tier || 'free',
       subscriptionStatus: user.fields.subscriptionStatus || 'none',
       lastPaymentDate: user.fields.lastPaymentDate || null,
       stripeCustomerId: user.fields.stripeCustomerId || null,
       stripeSubscriptionId: user.fields.stripeSubscriptionId || null,
-      isActive: user.fields.tier === 'paid' && user.fields.subscriptionStatus === 'active',
+      trialStartDate: user.fields.trialStartDate || null,
+      trialEndDate: user.fields.trialEndDate || null,
+      isActive: false, // Will be determined below
     };
 
-    // If user has a subscription, get details from Stripe
+    // Determine if subscription is active based on current status
+    const isTrialing = user.fields.subscriptionStatus === 'trial' || user.fields.subscriptionStatus === 'trialing';
+    const isPaid = user.fields.tier === 'paid' && ['active', 'trialing'].includes(user.fields.subscriptionStatus);
+    subscriptionStatus.isActive = isPaid || isTrialing;
+
+    // If user has a Stripe subscription, get real-time details
     if (user.fields.stripeSubscriptionId) {
       try {
+        console.log('🔄 Fetching Stripe subscription data...');
         const subscription = await stripe.subscriptions.retrieve(user.fields.stripeSubscriptionId);
+        
+        console.log('📊 Stripe subscription data:', {
+          id: subscription.id,
+          status: subscription.status,
+          current_period_start: subscription.current_period_start,
+          current_period_end: subscription.current_period_end,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          trial_end: subscription.trial_end
+        });
+
+        // Validate and set subscription data
         subscriptionStatus = {
           ...subscriptionStatus,
           subscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodStart: subscription.current_period_start,
-          currentPeriodEnd: subscription.current_period_end,
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodStart: subscription.current_period_start || null,
+          currentPeriodEnd: subscription.current_period_end || null,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+          trialEnd: subscription.trial_end || null,
         };
+
+        // Update isActive based on Stripe status
+        subscriptionStatus.isActive = ['active', 'trialing'].includes(subscription.status);
+        
+        console.log('✅ Final subscription status:', subscriptionStatus);
       } catch (stripeError) {
-        console.error('Error fetching subscription from Stripe:', stripeError);
+        console.error('❌ Error fetching subscription from Stripe:', stripeError);
+        console.error('📋 Stripe error details:', stripeError.message);
+        
+        // Don't fail the request - return user data without Stripe details
+        subscriptionStatus.stripeError = 'Failed to fetch real-time subscription data';
+      }
+    } else if (isTrialing && user.fields.trialEndDate) {
+      // Handle trial users without Stripe subscription
+      console.log('🆓 User is on trial without Stripe subscription');
+      try {
+        const trialEndDate = new Date(user.fields.trialEndDate);
+        const now = new Date();
+        
+        if (trialEndDate > now) {
+          subscriptionStatus.currentPeriodEnd = Math.floor(trialEndDate.getTime() / 1000);
+          subscriptionStatus.status = 'trialing';
+        } else {
+          subscriptionStatus.status = 'past_due';
+          subscriptionStatus.isActive = false;
+        }
+      } catch (dateError) {
+        console.error('❌ Error parsing trial end date:', dateError);
+        subscriptionStatus.status = 'incomplete';
       }
     }
 
     res.json(subscriptionStatus);
   } catch (error) {
-    console.error('Error fetching subscription status:', error);
+    console.error('❌ Error fetching subscription status:', error);
     res.status(500).json({ error: 'Failed to fetch subscription status' });
   }
 });
@@ -2261,24 +2317,107 @@ app.get('/subscription-status', authenticateToken, async (req, res) => {
 // Cancel subscription
 app.post('/cancel-subscription', authenticateToken, async (req, res) => {
   try {
+    console.log('🚫 Processing subscription cancellation for user:', req.user.id);
+    
     const user = await userTable.find(req.user.id);
     
-    if (!user || !user.fields.stripeSubscriptionId) {
-      return res.status(404).json({ error: 'No active subscription found' });
+    if (!user) {
+      console.error('❌ User not found for cancellation:', req.user.id);
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Cancel the subscription at the end of the current period
-    const subscription = await stripe.subscriptions.update(user.fields.stripeSubscriptionId, {
-      cancel_at_period_end: true,
+    console.log('📋 User subscription data:', {
+      email: user.fields.email,
+      tier: user.fields.tier,
+      subscriptionStatus: user.fields.subscriptionStatus,
+      stripeSubscriptionId: user.fields.stripeSubscriptionId
     });
 
-    res.json({ 
-      message: 'Subscription will be cancelled at the end of the current period',
-      cancelAt: subscription.current_period_end 
-    });
+    if (!user.fields.stripeSubscriptionId) {
+      console.error('❌ No Stripe subscription ID found for user:', user.fields.email);
+      return res.status(404).json({ 
+        error: 'No active subscription found',
+        details: 'User does not have a Stripe subscription ID'
+      });
+    }
+
+    try {
+      // First, verify the subscription exists in Stripe
+      console.log('🔍 Verifying subscription in Stripe...');
+      const existingSubscription = await stripe.subscriptions.retrieve(user.fields.stripeSubscriptionId);
+      
+      if (!existingSubscription) {
+        console.error('❌ Subscription not found in Stripe:', user.fields.stripeSubscriptionId);
+        return res.status(404).json({ 
+          error: 'Subscription not found in Stripe',
+          details: 'The subscription may have already been cancelled or does not exist'
+        });
+      }
+
+      console.log('📊 Current subscription status in Stripe:', {
+        id: existingSubscription.id,
+        status: existingSubscription.status,
+        cancel_at_period_end: existingSubscription.cancel_at_period_end,
+        current_period_end: existingSubscription.current_period_end
+      });
+
+      // Check if already set to cancel
+      if (existingSubscription.cancel_at_period_end) {
+        console.log('⚠️ Subscription already set to cancel at period end');
+        return res.json({ 
+          message: 'Subscription is already set to cancel at the end of the current period',
+          cancelAt: existingSubscription.current_period_end,
+          cancelAtDate: new Date(existingSubscription.current_period_end * 1000).toISOString(),
+          alreadyCancelling: true
+        });
+      }
+
+      // Cancel the subscription at the end of the current period
+      console.log('🔄 Setting subscription to cancel at period end...');
+      const subscription = await stripe.subscriptions.update(user.fields.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      console.log('✅ Subscription cancellation scheduled successfully');
+      console.log('📅 Cancellation effective date:', new Date(subscription.current_period_end * 1000).toISOString());
+
+      res.json({ 
+        success: true,
+        message: 'Subscription will be cancelled at the end of the current period',
+        cancelAt: subscription.current_period_end,
+        cancelAtDate: new Date(subscription.current_period_end * 1000).toISOString(),
+        status: subscription.status,
+        subscriptionId: subscription.id
+      });
+    } catch (stripeError) {
+      console.error('❌ Stripe API error during cancellation:', stripeError);
+      console.error('📋 Stripe error details:', {
+        type: stripeError.type,
+        code: stripeError.code,
+        message: stripeError.message,
+        statusCode: stripeError.statusCode
+      });
+
+      // Handle specific Stripe errors
+      if (stripeError.code === 'resource_missing') {
+        return res.status(404).json({ 
+          error: 'Subscription not found',
+          details: 'The subscription may have already been cancelled or does not exist in Stripe'
+        });
+      }
+
+      return res.status(500).json({ 
+        error: 'Failed to cancel subscription with Stripe',
+        details: stripeError.message
+      });
+    }
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
-    res.status(500).json({ error: 'Failed to cancel subscription' });
+    console.error('❌ Error cancelling subscription:', error);
+    console.error('📋 Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to cancel subscription',
+      details: 'Internal server error occurred while processing cancellation'
+    });
   }
 });
 
