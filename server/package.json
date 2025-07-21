@@ -12,6 +12,7 @@
     "npm": "9.x"
   },
   "dependencies": {
+    "@superfaceai/passport-twitter-oauth2": "^1.2.4",
     "airtable": "^0.12.2",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
