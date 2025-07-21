@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const compression = require('compression');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const OAuth2Strategy = require('passport-oauth2').Strategy;
+const TwitterStrategy = require('@superfaceai/passport-twitter-oauth2');
 const session = require('express-session');
 const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
@@ -237,60 +237,52 @@ if (isOAuthConfigValid) {
 
 // Twitter OAuth 2.0 Strategy Configuration
 if (isTwitterConfigValid) {
-  passport.use('twitter', new OAuth2Strategy({
-    authorizationURL: 'https://twitter.com/i/oauth2/authorize',
-    tokenURL: 'https://api.twitter.com/2/oauth2/token',
+  passport.use('twitter', new TwitterStrategy({
     clientID: process.env.TWITTER_CLIENT_ID,
     clientSecret: process.env.TWITTER_CLIENT_SECRET,
     callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`,
-    scope: ['tweet.read', 'users.read', 'offline.access', 'user:email'],
-    state: true,
-    pkce: true
+    scope: ['tweet.read', 'users.read', 'offline.access'],
+    includeEmail: false
   }, async (accessToken, refreshToken, profile, done) => {
     console.log('🔍 Twitter OAuth 2.0 Strategy callback triggered');
     console.log('🔑 Access Token received:', accessToken ? 'Yes' : 'No');
+    console.log('🎭 Profile received:', profile ? JSON.stringify(profile, null, 2) : 'No');
     
     try {
-      // Fetch user data from Twitter API v2
-      const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,email', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!userResponse.ok) {
-        console.error('❌ Failed to fetch Twitter user data:', userResponse.status, userResponse.statusText);
-        return done(new Error('Failed to fetch user data from Twitter'), null);
+      // Twitter profile structure from @superfaceai/passport-twitter-oauth2
+      if (!profile || !profile.id) {
+        console.error('❌ No profile data received from Twitter');
+        return done(new Error('No profile data received from Twitter'), null);
       }
       
-      const userData = await userResponse.json();
-      console.log('👤 Twitter User Data:', userData);
+      const twitterId = profile.id;
+      const username = profile.username;
+      const displayName = profile.displayName || profile.username;
       
-      const user = userData.data;
-      const email = user.email || null; // Email may not be available
-      const username = user.username;
-      const displayName = user.name || user.username;
-      
-      console.log('🔍 Twitter OAuth callback received for user:', email || username);
+      console.log('📋 Twitter User Info:', { twitterId, username, displayName });
+      console.log('🔍 Twitter OAuth callback received for user:', username);
       
       let existingUser = null;
       
-      // First try to find user by email if available
-      if (email) {
-        const usersByEmail = await userTable.select({
-          filterByFormula: `{email} = "${email}"`
+      // Try to find user by Twitter ID first (most reliable identifier)
+      try {
+        console.log('🔍 Searching for existing user by Twitter ID...');
+        const usersByTwitterId = await userTable.select({
+          filterByFormula: `{twitterId} = "${twitterId}"`
         }).firstPage();
         
-        if (usersByEmail.length > 0) {
-          existingUser = usersByEmail[0];
-          console.log('✅ Existing user found by email:', email);
+        if (usersByTwitterId.length > 0) {
+          existingUser = usersByTwitterId[0];
+          console.log('✅ Existing user found by Twitter ID:', twitterId);
         }
+      } catch (twitterIdError) {
+        console.log('⚠️ twitterId field lookup failed:', twitterIdError.message);
       }
       
-      // If no user found by email, try to find by Twitter username
+      // If no user found by Twitter ID, try by Twitter username as fallback
       if (!existingUser) {
         try {
+          console.log('🔍 Searching for existing user by Twitter username...');
           const usersByTwitter = await userTable.select({
             filterByFormula: `{twitterUsername} = "${username}"`
           }).firstPage();
@@ -298,57 +290,72 @@ if (isTwitterConfigValid) {
           if (usersByTwitter.length > 0) {
             existingUser = usersByTwitter[0];
             console.log('✅ Existing user found by Twitter username:', username);
+            
+            // Update with Twitter ID if missing
+            if (!existingUser.fields.twitterId) {
+              try {
+                await userTable.update([{
+                  id: existingUser.id,
+                  fields: { twitterId: twitterId }
+                }]);
+                console.log('✅ Updated user with Twitter ID');
+              } catch (updateError) {
+                console.error('⚠️ Failed to update Twitter ID:', updateError.message);
+              }
+            }
           }
         } catch (twitterFieldError) {
-          console.log('⚠️ twitterUsername field not found in Airtable, continuing without it');
+          console.log('⚠️ twitterUsername field lookup failed:', twitterFieldError.message);
         }
       }
       
       if (existingUser) {
+        console.log('✅ Returning existing user for Twitter auth');
         return done(null, existingUser);
       } else {
-        console.log('👤 Creating new user for Twitter user:', email || username);
+        console.log('🆕 Creating new user for Twitter user:', username);
         
-        // For Twitter users without email, we'll use username@twitter.local as a placeholder
-        const userEmail = email || `${username}@twitter.local`;
+        // For Twitter users, create a temporary email since Twitter doesn't provide email without special approval
+        const tempEmail = `${username}@twitter-temp.local`;
         
-        // Prepare user fields
+        // Prepare base user fields that match the existing schema
         const userFields = {
-          email: userEmail,
-          firstName: displayName.split(' ')[0] || username,
-          lastName: displayName.split(' ').slice(1).join(' ') || '',
-          tier: 'free',
-          isVerified: true, // Twitter users are considered verified
-          source: 'twitter',
-          registrationDate: new Date().toISOString()
+          email: tempEmail,
+          fullName: displayName,
+          emailVerified: false,
+          registrationDate: new Date().toISOString(),
+          subscriptionStatus: 'trial',
+          trialStartDate: new Date().toISOString(),
+          trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          requiresEmailUpdate: true // Flag to require real email later
         };
         
-        // Try to create user with twitterUsername field
+        // Try to create user with Twitter fields
         try {
-          const newUser = await userTable.create([
-            {
-              fields: {
-                ...userFields,
-                twitterId: user.id,
-                twitterUsername: username
-              }
+          console.log('🔧 Attempting to create user with Twitter fields...');
+          const newUser = await userTable.create([{
+            fields: {
+              ...userFields,
+              twitterId: twitterId,
+              twitterUsername: username
             }
-          ]);
-          console.log('✅ New Twitter user created with twitterId:', newUser[0].fields.email);
+          }]);
+          console.log('✅ New Twitter user created with Twitter fields:', username);
           return done(null, newUser[0]);
-        } catch (twitterIdError) {
-          if (twitterIdError.message.includes('twitterId') || twitterIdError.message.includes('twitterUsername')) {
-            console.log('⚠️ Twitter fields not found in Airtable, creating user without them');
-            // Create user without Twitter-specific fields
-            const newUser = await userTable.create([
-              {
-                fields: userFields
-              }
-            ]);
-            console.log('✅ New Twitter user created without twitterId:', newUser[0].fields.email);
+        } catch (twitterFieldError) {
+          console.log('⚠️ Twitter fields not available, creating user with basic fields only');
+          console.log('📋 Error details:', twitterFieldError.message);
+          
+          // Fallback: Create user without Twitter-specific fields
+          try {
+            const newUser = await userTable.create([{
+              fields: userFields
+            }]);
+            console.log('✅ New Twitter user created without Twitter fields:', username);
             return done(null, newUser[0]);
-          } else {
-            throw twitterIdError;
+          } catch (basicFieldError) {
+            console.error('❌ Failed to create user with basic fields:', basicFieldError);
+            throw basicFieldError;
           }
         }
       }
@@ -1042,13 +1049,17 @@ app.get('/auth/twitter', (req, res, next) => {
   
   try {
     console.log('🔧 Twitter OAuth params:', { 
-      includeEmail: true,
+      includeEmail: false,
       clientId: process.env.TWITTER_CLIENT_ID?.substring(0, 20) + '...',
-      callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`
+      callbackURL: `${process.env.API_BASE_URL || 'https://web3-automated-lead-discovery-production.up.railway.app'}/auth/twitter/callback`,
+      strategy: '@superfaceai/passport-twitter-oauth2',
+      scope: ['tweet.read', 'users.read', 'offline.access']
     });
     
     console.log('🚀 Attempting to authenticate with Twitter...');
-    passport.authenticate('twitter')(req, res, next);
+    passport.authenticate('twitter', {
+      scope: ['tweet.read', 'users.read', 'offline.access']
+    })(req, res, next);
   } catch (error) {
     console.error('❌ Error during Twitter OAuth initiation:', error);
     console.error('📋 Full error:', error);
