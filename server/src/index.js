@@ -2266,12 +2266,25 @@ app.get('/subscription-status', authenticateToken, async (req, res) => {
         });
 
         // Validate and set subscription data
+        // For trialing subscriptions, use trial_end as the period end
+        const effectivePeriodEnd = subscription.status === 'trialing' 
+          ? subscription.trial_end 
+          : subscription.current_period_end;
+          
+        console.log('🔧 Processing subscription dates:', {
+          status: subscription.status,
+          trial_end: subscription.trial_end,
+          current_period_end: subscription.current_period_end,
+          effectivePeriodEnd: effectivePeriodEnd,
+          trialEndFormatted: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+        });
+          
         subscriptionStatus = {
           ...subscriptionStatus,
           subscriptionId: subscription.id,
           status: subscription.status,
           currentPeriodStart: subscription.current_period_start || null,
-          currentPeriodEnd: subscription.current_period_end || null,
+          currentPeriodEnd: effectivePeriodEnd || null,
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           trialEnd: subscription.trial_end || null,
         };
