@@ -19,9 +19,12 @@ interface SubscriptionStatus {
   stripeSubscriptionId?: string;
   subscriptionId?: string;
   status?: string;
+  subscriptionStatus?: string;
   currentPeriodStart?: number;
   currentPeriodEnd?: number;
   cancelAtPeriodEnd?: boolean;
+  trialEnd?: number;
+  stripeError?: string;
 }
 
 const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
@@ -221,16 +224,19 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               <span className="capitalize">{displayStatus}</span>
             </div>
             
-            {subscriptionStatus.currentPeriodEnd && (
+            {(subscriptionStatus.currentPeriodEnd || subscriptionStatus.trialEnd) && (
               <div className="flex justify-between">
-                <span>{isCancelling ? 'Subscription ends:' : isTrialing ? 'Trial ends:' : 'Next billing:'}:</span>
-                <span>{formatDateSafe(subscriptionStatus.currentPeriodEnd)}</span>
+                <span>{isCancelling && isTrialing ? 'Trial ends:' : isCancelling ? 'Subscription ends:' : isTrialing ? 'Trial ends:' : 'Next billing:'}:</span>
+                <span>{formatDateSafe(subscriptionStatus.currentPeriodEnd || subscriptionStatus.trialEnd)}</span>
               </div>
             )}
             
             {isCancelling && (
               <div className="text-yellow-600 font-medium">
-                Your subscription will end on {formatDateSafe(subscriptionStatus.currentPeriodEnd)}
+                {isTrialing 
+                  ? `Your trial will end on ${formatDateSafe(subscriptionStatus.currentPeriodEnd || subscriptionStatus.trialEnd)}`
+                  : `Your subscription will end on ${formatDateSafe(subscriptionStatus.currentPeriodEnd)}`
+                }
               </div>
             )}
             
@@ -303,7 +309,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               )}
               {isCancelling && (
                 <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
-                  ⏳ Cancellation scheduled - you'll retain access until {formatDateSafe(subscriptionStatus?.currentPeriodEnd)}
+                  ⏳ Cancellation scheduled - you'll retain access until {formatDateSafe(subscriptionStatus?.currentPeriodEnd || subscriptionStatus?.trialEnd)}
                 </div>
               )}
             </div>
