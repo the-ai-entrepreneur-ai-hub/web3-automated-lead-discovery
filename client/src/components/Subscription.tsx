@@ -130,39 +130,81 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         return;
       }
 
-      await stripeApi.cancelSubscription(token);
+      console.log('🚫 Initiating subscription cancellation...');
+      const response = await stripeApi.cancelSubscription(token);
+      console.log('✅ Cancellation response:', response);
+      
+      // Refresh subscription status to show updated cancellation state
       await fetchSubscriptionStatus();
+      
       if (onSubscriptionUpdate) {
         onSubscriptionUpdate();
       }
+      
+      // Clear any existing errors on successful cancellation
+      setError(null);
     } catch (err) {
-      console.error('Error cancelling subscription:', err);
-      setError('Failed to cancel subscription. Please try again.');
+      console.error('❌ Error cancelling subscription:', err);
+      
+      // Extract error message from response if available
+      let errorMessage = 'Failed to cancel subscription. Please try again.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        errorMessage = (err as any).message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString();
+  const formatDate = (timestamp: number | null | undefined): string => {
+    if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+      return 'Invalid Date';
+    }
+    
+    try {
+      const date = new Date(timestamp * 1000);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      return date.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error, 'timestamp:', timestamp);
+      return 'Invalid Date';
+    }
+  };
+
+  const formatDateSafe = (timestamp: number | null | undefined): string => {
+    const formatted = formatDate(timestamp);
+    return formatted === 'Invalid Date' ? 'Date unavailable' : formatted;
   };
 
   if (!user) return null;
 
-  const isPaid = subscriptionStatus?.tier === 'paid';
-  const isActive = subscriptionStatus?.isActive;
+  // Enhanced subscription status logic
+  const isPaid = subscriptionStatus?.tier === 'paid' || subscriptionStatus?.status === 'active';
+  const isTrialing = subscriptionStatus?.status === 'trialing' || subscriptionStatus?.subscriptionStatus === 'trial';
+  const isActive = subscriptionStatus?.isActive || isPaid || isTrialing;
+  const isCancelling = subscriptionStatus?.cancelAtPeriodEnd;
+
+  // Determine display status and tier
+  const displayTier = isPaid ? 'Pro' : isTrialing ? 'Pro (Trial)' : 'Free';
+  const displayStatus = subscriptionStatus?.status || subscriptionStatus?.subscriptionStatus || 'none';
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Subscription Status
-          <Badge variant={isPaid ? 'default' : 'secondary'}>
-            {isPaid ? 'Pro' : 'Free'}
+          <Badge variant={isActive ? 'default' : 'secondary'}>
+            {displayTier}
           </Badge>
         </CardTitle>
         <CardDescription>
-          {isPaid ? 'You have access to all premium features' : 'Upgrade to unlock all features'}
+          {isActive ? 'You have access to all premium features' : 'Upgrade to unlock all features'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -172,30 +214,37 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
           </div>
         )}
 
-        {isPaid && subscriptionStatus && (
+        {isActive && subscriptionStatus && (
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Status:</span>
-              <span className="capitalize">{subscriptionStatus.status}</span>
+              <span className="capitalize">{displayStatus}</span>
             </div>
+            
             {subscriptionStatus.currentPeriodEnd && (
               <div className="flex justify-between">
-                <span>Next billing:</span>
-                <span>{formatDate(subscriptionStatus.currentPeriodEnd)}</span>
+                <span>{isCancelling ? 'Subscription ends:' : isTrialing ? 'Trial ends:' : 'Next billing:'}:</span>
+                <span>{formatDateSafe(subscriptionStatus.currentPeriodEnd)}</span>
               </div>
             )}
-            {subscriptionStatus.cancelAtPeriodEnd && (
+            
+            {isCancelling && (
               <div className="text-yellow-600 font-medium">
-                Your subscription will end on {formatDate(subscriptionStatus.currentPeriodEnd!)}
+                Your subscription will end on {formatDateSafe(subscriptionStatus.currentPeriodEnd)}
+              </div>
+            )}
+            
+            {subscriptionStatus.stripeError && (
+              <div className="text-orange-600 text-xs bg-orange-50 p-2 rounded">
+                ⚠️ {subscriptionStatus.stripeError}
               </div>
             )}
           </div>
         )}
 
         <div className="space-y-4">
-          {!isPaid && (
+          {!isActive && (
             <div className="space-y-3">
-              
               <div className="space-y-2">
                 <Label htmlFor="discount-code">Discount Code (Optional)</Label>
                 <div className="flex space-x-2">
@@ -229,7 +278,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
             </div>
           )}
           
-          {!isPaid ? (
+          {!isActive ? (
             <Button
               onClick={handleUpgrade}
               disabled={isLoading}
@@ -242,7 +291,7 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
               <div className="text-sm text-green-600 font-medium">
                 ✓ Premium features unlocked
               </div>
-              {!subscriptionStatus?.cancelAtPeriodEnd && (
+              {isActive && !isCancelling && subscriptionStatus?.stripeSubscriptionId && (
                 <Button
                   onClick={handleCancel}
                   disabled={isLoading}
@@ -251,6 +300,11 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
                 >
                   {isLoading ? 'Processing...' : 'Cancel Subscription'}
                 </Button>
+              )}
+              {isCancelling && (
+                <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                  ⏳ Cancellation scheduled - you'll retain access until {formatDateSafe(subscriptionStatus?.currentPeriodEnd)}
+                </div>
               )}
             </div>
           )}

@@ -50,7 +50,14 @@ export const stripeApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch subscription status');
+      let errorMessage = 'Failed to fetch subscription status';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.details || errorMessage;
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -66,7 +73,15 @@ export const stripeApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to cancel subscription');
+      let errorMessage = 'Failed to cancel subscription';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.details || errorMessage;
+      } catch (parseError) {
+        // If we can't parse the error response, use the default message
+        console.error('Failed to parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
