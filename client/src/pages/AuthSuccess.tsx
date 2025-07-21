@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { config } from '@/lib/config';
+import { storeGoogleAccessToken, authService } from '@/lib/auth';
 
 const AuthSuccess = () => {
   const navigate = useNavigate();
@@ -76,6 +77,9 @@ const AuthSuccess = () => {
         // Store token immediately
         localStorage.setItem('token', token);
         
+        // Initialize auth service activity tracking
+        authService.refreshSession();
+        
         // Fetch user data to validate token and populate user info
         setStatus('Fetching user profile...');
         try {
@@ -89,6 +93,19 @@ const AuthSuccess = () => {
             console.log('✅ User data stored:', userData);
             console.log('✅ LocalStorage token:', localStorage.getItem('token'));
             console.log('✅ LocalStorage user:', localStorage.getItem('user'));
+            
+            // Check if this is a Google OAuth user and store access token if available
+            const authFlow = sessionStorage.getItem('authFlow');
+            if (authFlow === 'google' || userData.source === 'google') {
+              // For Google OAuth users, we need to get the access token
+              // This would be passed from the OAuth callback if available
+              const googleAccessToken = searchParams.get('google_access_token');
+              if (googleAccessToken) {
+                storeGoogleAccessToken(googleAccessToken);
+                console.log('📝 Google access token stored for logout');
+              }
+            }
+            
             setStatus('Authentication successful! Redirecting to dashboard...');
             
             // Wait a moment then redirect

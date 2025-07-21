@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { UserCircle, LogOut, Menu, X, ChevronDown, Settings } from "lucide-react";
+import { UserCircle, LogOut, Menu, X, ChevronDown, Settings, Clock } from "lucide-react";
 import { User } from "@/lib/types";
 import { config } from "@/lib/config";
+import { authService } from "@/lib/auth";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,6 +13,8 @@ const Header = () => {
   const [isSuccessStoriesOpen, setIsSuccessStoriesOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [sessionTimeRemaining, setSessionTimeRemaining] = useState<string>('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -19,6 +22,13 @@ const Header = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        // Check if session is expired before making API call
+        if (authService.isSessionExpired()) {
+          console.log('🕐 Session expired, logging out...');
+          authService.forceLogout('Session expired');
+          return;
+        }
+
         const token = localStorage.getItem("token");
         if (token) {
           const response = await fetch(`${config.API_URL}/profile`, {
@@ -38,8 +48,14 @@ const Header = () => {
             setUser(data);
             // Update localStorage with fresh data from server
             localStorage.setItem("user", JSON.stringify(data));
+            // Refresh session activity
+            authService.refreshSession();
+          } else if (response.status === 401 || response.status === 403) {
+            // Token is invalid, logout user
+            console.log('🔒 Invalid token, logging out...');
+            authService.forceLogout('Invalid authentication token');
           } else {
-            // Token is invalid, clean up
+            // Other error, clean up
             localStorage.removeItem("token");
             localStorage.removeItem("user");
             setUser(null);
@@ -61,6 +77,36 @@ const Header = () => {
     fetchUser();
   }, []);
 
+  // Monitor session time remaining
+  useEffect(() => {
+    if (!user) return;
+
+    const updateSessionTime = () => {
+      const timeRemaining = authService.getTimeUntilExpiry();
+      
+      if (timeRemaining <= 0) {
+        setSessionTimeRemaining('Expired');
+        return;
+      }
+
+      const minutes = Math.floor(timeRemaining / (1000 * 60));
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+
+      if (hours > 0) {
+        setSessionTimeRemaining(`${hours}h ${remainingMinutes}m`);
+      } else {
+        setSessionTimeRemaining(`${remainingMinutes}m`);
+      }
+    };
+
+    // Update immediately and then every minute
+    updateSessionTime();
+    const interval = setInterval(updateSessionTime, 60000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Handle clicking outside profile dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,23 +122,21 @@ const Header = () => {
   }, []);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent double logout
+    
+    setIsLoggingOut(true);
+    setIsProfileOpen(false);
+    
     try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        await fetch(`${config.API_URL}/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
+      console.log('🚪 User initiated logout');
+      await authService.logout('User clicked sign out');
+      // authService.logout handles navigation, so no need to navigate here
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
+      // Force logout if there's an error
+      authService.forceLogout('Logout error occurred');
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setUser(null);
-      navigate("/");
+      setIsLoggingOut(false);
     }
   };
 
@@ -252,6 +296,12 @@ const Header = () => {
                         <div className="text-xs text-muted-foreground mt-1">
                           <span className="capitalize">{user.tier}</span> plan
                         </div>
+                        {sessionTimeRemaining && (
+                          <div className="text-xs text-orange-600 mt-1 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Session: {sessionTimeRemaining}
+                          </div>
+                        )}
                       </div>
                       <div className="py-1">
                         <button
@@ -266,10 +316,11 @@ const Header = () => {
                         </button>
                         <button
                           onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:bg-accent/50 transition-colors"
+                          disabled={isLoggingOut}
+                          className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:bg-accent/50 transition-colors disabled:opacity-50"
                         >
                           <LogOut className="h-4 w-4 mr-2" />
-                          Sign Out
+                          {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                         </button>
                       </div>
                     </div>
@@ -396,13 +447,14 @@ const Header = () => {
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-muted-foreground hover:text-primary"
+                      disabled={isLoggingOut}
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
                     >
                       <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
+                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                     </Button>
                   </div>
                 ) : (

@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { config } from "@/lib/config";
+import { storeGoogleAccessToken } from "@/lib/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");

@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import LogoutNotification from "./components/LogoutNotification";
 
 // Lazy load components for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -51,6 +52,7 @@ function App() {
 
   return (
     <Router>
+      <LogoutNotification />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
