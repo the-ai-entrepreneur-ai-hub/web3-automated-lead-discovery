@@ -28,7 +28,12 @@ const Login = () => {
         'no_user_data': 'Failed to get user information from Google. Please try again.',
         'oauth_callback_failed': 'Google authentication callback failed. Please try again.',
         'google_oauth_error': 'Google OAuth service error. Please try again later.',
-        'oauth_initiation_failed': 'Failed to start Google authentication. Please try again.'
+        'oauth_initiation_failed': 'Failed to start Google authentication. Please try again.',
+        'twitter_oauth_failed': 'Twitter authentication failed. Please try again.',
+        'twitter_oauth_not_configured': 'Twitter authentication is not properly configured. Please check your Twitter API settings.',
+        'twitter_oauth_error': 'Twitter OAuth service error. Please try again later.',
+        'twitter_oauth_initiation_failed': 'Failed to start Twitter authentication. Please try again.',
+        'twitter_oauth_callback_failed': 'Twitter authentication callback failed. Please try again.'
       };
       setError(errorMessages[oauthError] || 'Authentication failed. Please try again.');
     }
