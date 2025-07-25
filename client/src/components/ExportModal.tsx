@@ -137,12 +137,12 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
           <div className="space-y-3">
             <label className="text-sm font-medium text-foreground">Time Period</label>
             <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-card/50 border-border/50 hover:border-primary/30">
                 <SelectValue placeholder="Select time period" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card border-border/50">
                 {timeFilterOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} className="hover:bg-primary/5">
                     {option.label}
                   </SelectItem>
                 ))}
@@ -223,7 +223,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
             <Button 
               onClick={handleExport} 
               disabled={isExporting}
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 font-medium"
             >
               {isExporting ? 'Exporting...' : 'Export Data'}
             </Button>
