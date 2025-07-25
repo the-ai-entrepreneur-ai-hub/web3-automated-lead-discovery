@@ -124,10 +124,10 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-card/95 backdrop-blur border-border/50">
         <DialogHeader>
-          <DialogTitle>Export Lead Data</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl font-bold text-primary">Export Lead Data</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Customize your export with filtering and field selection options.
           </DialogDescription>
         </DialogHeader>
@@ -135,7 +135,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
         <div className="space-y-6">
           {/* Time Filter */}
           <div className="space-y-3">
-            <label className="text-sm font-medium">Time Period</label>
+            <label className="text-sm font-medium text-foreground">Time Period</label>
             <Select value={timeFilter} onValueChange={setTimeFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Select time period" />
@@ -152,7 +152,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
 
           {/* Field Selection */}
           <div className="space-y-3">
-            <label className="text-sm font-medium">Include Fields</label>
+            <label className="text-sm font-medium text-foreground">Include Fields</label>
             <div className="grid grid-cols-2 gap-3">
               {fieldOptions.map(field => {
                 const isAvailable = (userTier === 'paid' || !field.premium) && !field.comingSoon;
@@ -161,8 +161,12 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
                 return (
                   <div
                     key={field.id}
-                    className={`flex items-center space-x-2 p-2 rounded border ${
-                      !isAvailable || field.comingSoon ? 'opacity-50 bg-gray-50' : ''
+                    className={`flex items-center space-x-2 p-3 rounded-lg border transition-all ${
+                      field.comingSoon 
+                        ? 'bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 opacity-75' 
+                        : !isAvailable 
+                        ? 'bg-gradient-to-r from-amber-500/5 to-amber-500/10 border-amber-500/20 opacity-75' 
+                        : 'bg-card/50 border-border/50 hover:border-primary/30'
                     }`}
                   >
                     <Checkbox
@@ -173,17 +177,17 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
                     />
                     <label
                       htmlFor={field.id}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed flex items-center gap-2 flex-1"
                     >
                       {field.label}
                       {field.required && (
-                        <Badge variant="secondary" className="text-xs">Required</Badge>
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">Required</Badge>
                       )}
                       {field.comingSoon && (
-                        <Badge variant="outline" className="text-xs text-blue-600 border-blue-600">Coming Soon</Badge>
+                        <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">Coming Soon</Badge>
                       )}
                       {field.premium && userTier !== 'paid' && !field.comingSoon && (
-                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-600">Pro</Badge>
+                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">Pro</Badge>
                       )}
                     </label>
                   </div>
@@ -195,7 +199,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
           {/* Quality Filters */}
           {userTier === 'paid' && (
             <div className="space-y-3">
-              <label className="text-sm font-medium">Quality Filters</label>
+              <label className="text-sm font-medium text-foreground">Quality Filters</label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -212,11 +216,15 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
           )}
 
           {/* Export Button */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isExporting}>
+          <div className="flex justify-end space-x-3 pt-6 border-t border-border/50">
+            <Button variant="outline" onClick={onClose} disabled={isExporting} className="border-border/50 hover:border-primary/30">
               Cancel
             </Button>
-            <Button onClick={handleExport} disabled={isExporting}>
+            <Button 
+              onClick={handleExport} 
+              disabled={isExporting}
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium"
+            >
               {isExporting ? 'Exporting...' : 'Export Data'}
             </Button>
           </div>
