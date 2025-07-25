@@ -17,25 +17,22 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
   const [includeFields, setIncludeFields] = useState([
     "projectName",
     "website",
-    "email",
     "twitter",
     "linkedin",
-    "telegram"
+    "telegram",
+    "dateAdded"
   ]);
   const [requireSocials, setRequireSocials] = useState(false);
-  const [requireEmail, setRequireEmail] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const fieldOptions = [
     { id: "projectName", label: "Project Name", required: true },
     { id: "website", label: "Website", required: true },
-    { id: "email", label: "Email", premium: true },
+    { id: "email", label: "Email", premium: true, comingSoon: true },
     { id: "twitter", label: "Twitter", premium: true },
     { id: "linkedin", label: "LinkedIn", premium: true },
     { id: "telegram", label: "Telegram", premium: true },
-    { id: "dateAdded", label: "Date Added", premium: false },
-    { id: "status", label: "Status", premium: false },
-    { id: "source", label: "Source", premium: false }
+    { id: "dateAdded", label: "Date Added", premium: false }
   ];
 
   const timeFilterOptions = [
@@ -47,7 +44,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
 
   const handleFieldToggle = (fieldId: string) => {
     const field = fieldOptions.find(f => f.id === fieldId);
-    if (field?.required) return;
+    if (field?.required || field?.comingSoon) return;
 
     setIncludeFields(prev => 
       prev.includes(fieldId)
@@ -68,7 +65,6 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
         timeFilter,
         includeFields,
         requireSocials,
-        requireEmail,
         format: 'csv'
       };
 
@@ -159,21 +155,21 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
             <label className="text-sm font-medium">Include Fields</label>
             <div className="grid grid-cols-2 gap-3">
               {fieldOptions.map(field => {
-                const isAvailable = userTier === 'paid' || !field.premium;
-                const isChecked = includeFields.includes(field.id);
+                const isAvailable = (userTier === 'paid' || !field.premium) && !field.comingSoon;
+                const isChecked = includeFields.includes(field.id) && !field.comingSoon;
                 
                 return (
                   <div
                     key={field.id}
                     className={`flex items-center space-x-2 p-2 rounded border ${
-                      !isAvailable ? 'opacity-50 bg-gray-50' : ''
+                      !isAvailable || field.comingSoon ? 'opacity-50 bg-gray-50' : ''
                     }`}
                   >
                     <Checkbox
                       id={field.id}
                       checked={isChecked}
                       onCheckedChange={() => handleFieldToggle(field.id)}
-                      disabled={!isAvailable || field.required}
+                      disabled={!isAvailable || field.required || field.comingSoon}
                     />
                     <label
                       htmlFor={field.id}
@@ -183,7 +179,10 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
                       {field.required && (
                         <Badge variant="secondary" className="text-xs">Required</Badge>
                       )}
-                      {field.premium && userTier !== 'paid' && (
+                      {field.comingSoon && (
+                        <Badge variant="outline" className="text-xs text-blue-600 border-blue-600">Coming Soon</Badge>
+                      )}
+                      {field.premium && userTier !== 'paid' && !field.comingSoon && (
                         <Badge variant="outline" className="text-xs text-amber-600 border-amber-600">Pro</Badge>
                       )}
                     </label>
@@ -206,16 +205,6 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
                   />
                   <label htmlFor="require-socials" className="text-sm">
                     Only include projects with social media links
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="require-email"
-                    checked={requireEmail}
-                    onCheckedChange={setRequireEmail}
-                  />
-                  <label htmlFor="require-email" className="text-sm">
-                    Only include projects with email addresses
                   </label>
                 </div>
               </div>
