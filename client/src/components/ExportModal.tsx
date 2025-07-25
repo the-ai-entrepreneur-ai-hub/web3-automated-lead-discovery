@@ -88,6 +88,13 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
       }
 
       console.log(`Exporting ${exportData.exported} projects out of ${exportData.total} total`);
+      console.log(`📋 Client received ${exportData.data.length} records in exportData.data`);
+      console.log(`🔍 Export response:`, { 
+        total: exportData.total, 
+        filtered: exportData.filtered, 
+        exported: exportData.exported,
+        dataLength: exportData.data.length 
+      });
 
       const headers = Object.keys(exportData.data[0] || {});
       const csvContent = "data:text/csv;charset=utf-8,"
