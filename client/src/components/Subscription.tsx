@@ -34,12 +34,38 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
   const [discountCode, setDiscountCode] = useState('');
   const [discountInfo, setDiscountInfo] = useState<any>(null);
   const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [validationController, setValidationController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchSubscriptionStatus();
+      // Check for stored discount code on component mount
+      const storedCode = localStorage.getItem('appliedDiscountCode');
+      if (storedCode) {
+        try {
+          const parsedCode = JSON.parse(storedCode);
+          if (parsedCode.expiresAt && Date.now() < parsedCode.expiresAt) {
+            setDiscountCode(parsedCode.code);
+            // Re-validate the stored code
+            setTimeout(() => handleValidateDiscountCode(), 100);
+          } else {
+            localStorage.removeItem('appliedDiscountCode');
+          }
+        } catch {
+          localStorage.removeItem('appliedDiscountCode');
+        }
+      }
     }
   }, [user]);
+  
+  // Cleanup controller on unmount
+  useEffect(() => {
+    return () => {
+      if (validationController) {
+        validationController.abort();
+      }
+    };
+  }, [validationController]);
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -55,8 +81,16 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
   };
 
   const handleValidateDiscountCode = async () => {
-    if (!discountCode.trim()) return;
+    const codeToValidate = discountCode.trim();
+    if (!codeToValidate) return;
     
+    // Cancel any ongoing validation
+    if (validationController) {
+      validationController.abort();
+    }
+    
+    const controller = new AbortController();
+    setValidationController(controller);
     setIsValidatingCode(true);
     setError(null);
     
@@ -67,25 +101,42 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         return;
       }
 
-      const result = await stripeApi.validateDiscountCode(token, discountCode);
+      const result = await stripeApi.validateDiscountCode(token, codeToValidate);
+      
+      // Check if request was aborted
+      if (controller.signal.aborted) {
+        return;
+      }
+      
       if (result.valid) {
         setDiscountInfo(result);
         setError(null);
-        // Store valid discount code for use in all upgrade buttons
-        localStorage.setItem('appliedDiscountCode', discountCode.trim());
-        console.log('✅ Discount code stored for global use:', discountCode.trim());
+        // Store valid discount code with expiration (24 hours)
+        const validCode = {
+          code: codeToValidate,
+          validatedAt: Date.now(),
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        };
+        localStorage.setItem('appliedDiscountCode', JSON.stringify(validCode));
+        console.log('✅ Discount code stored for global use:', codeToValidate);
       } else {
         setDiscountInfo(null);
         setError(result.message || 'Invalid discount code');
         // Remove invalid discount code
         localStorage.removeItem('appliedDiscountCode');
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return; // Request was cancelled
+      }
       console.error('Error validating discount code:', err);
       setDiscountInfo(null);
-      setError('Failed to validate discount code');
+      setError(err.message || 'Failed to validate discount code');
     } finally {
-      setIsValidatingCode(false);
+      if (!controller.signal.aborted) {
+        setIsValidatingCode(false);
+        setValidationController(null);
+      }
     }
   };
 
@@ -100,7 +151,27 @@ const Subscription = ({ user, onSubscriptionUpdate }: SubscriptionProps) => {
         return;
       }
 
-      const response = await stripeApi.createCheckoutSession(token, discountCode.trim() || undefined);
+      // Get valid discount code from storage or current input
+      let finalDiscountCode = discountCode.trim();
+      
+      // Check if we have a stored valid discount code
+      const storedCode = localStorage.getItem('appliedDiscountCode');
+      if (storedCode) {
+        try {
+          const parsedCode = JSON.parse(storedCode);
+          if (parsedCode.expiresAt && Date.now() < parsedCode.expiresAt) {
+            finalDiscountCode = parsedCode.code;
+          } else {
+            // Stored code expired, remove it
+            localStorage.removeItem('appliedDiscountCode');
+          }
+        } catch {
+          // Invalid stored code format, remove it
+          localStorage.removeItem('appliedDiscountCode');
+        }
+      }
+      
+      const response = await stripeApi.createCheckoutSession(token, finalDiscountCode || undefined);
       
       if (response.success && response.url) {
         console.log('💳 Subscription checkout details:', {

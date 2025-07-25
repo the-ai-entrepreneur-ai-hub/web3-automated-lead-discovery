@@ -33,10 +33,21 @@ const STRIPE_CONFIG = {
   CANCEL_URL: `${process.env.CLIENT_URL || 'https://rawfreedomai.com'}/#/dashboard?payment=canceled`,
   FREE_TRIAL_DAYS: 14, // 14-day free trial
   DISCOUNT_CODES: {
-    'ProspectingGOAT12': {
+    'PROSPECTINGGOAT12': {
       percentage: 70,
       duration: 'once',
-      description: '70% off first month'
+      description: '70% off first month',
+      maxUses: 100,
+      expiresAt: null,
+      active: true
+    },
+    'PROSPECTINGGOAT100': {
+      percentage: 50,
+      duration: 'once',
+      description: '50% off first month',
+      maxUses: 500,
+      expiresAt: null,
+      active: true
     }
   },
   IS_CONFIGURED: validateStripeConfig()

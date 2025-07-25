@@ -26,17 +26,34 @@ export const stripeApi = {
   },
 
   validateDiscountCode: async (token: string, discountCode: string) => {
+    // Input validation
+    if (!discountCode || typeof discountCode !== 'string') {
+      throw new Error('Discount code must be a valid string');
+    }
+    
+    const trimmedCode = discountCode.trim();
+    if (trimmedCode.length < 3 || trimmedCode.length > 50) {
+      throw new Error('Discount code must be between 3 and 50 characters');
+    }
+    
     const response = await fetch(`${config.API_URL}/validate-discount-code`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ discountCode }),
+      body: JSON.stringify({ discountCode: trimmedCode }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to validate discount code');
+      let errorMessage = 'Failed to validate discount code';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // If we can't parse the error, use the default message
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
