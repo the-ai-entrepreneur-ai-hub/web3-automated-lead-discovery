@@ -22,7 +22,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
     "telegram",
     "dateAdded"
   ]);
-  const [requireSocials, setRequireSocials] = useState(false);
+  const [requireSocials, setRequireSocials] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
   const fieldOptions = [
@@ -208,7 +208,7 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
                     onCheckedChange={setRequireSocials}
                   />
                   <label htmlFor="require-socials" className="text-sm">
-                    Only include projects with social media links
+                    Only include projects with social media links (recommended)
                   </label>
                 </div>
               </div>
