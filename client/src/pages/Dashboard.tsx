@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
+import ExportModal from "@/components/ExportModal";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "@/lib/types";
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [activeDiscountCode, setActiveDiscountCode] = useState<string | null>(null);
   const [trialInfo, setTrialInfo] = useState<{daysLeft: number; isExpiring: boolean} | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const navigate = useNavigate();
 
   // Check for payment status in URL and active discount code
@@ -235,61 +237,18 @@ const Dashboard = () => {
   }, [fetchData]);
 
 
-  const handleExport = async () => {
-    const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const timestamp = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
-    
+  const handleExport = () => {
     if (user?.tier === 'paid') {
-      // Premium users: Fetch all projects with social media from server
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${config.API_URL}/export-premium`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch export data');
-        }
-
-        const exportData = await response.json();
-        console.log(`Exporting ${exportData.withSocials} projects out of ${exportData.total} total`);
-
-        const headers = ["Project Name", "Website", "Twitter", "LinkedIn", "Telegram"];
-        const csvContent = "data:text/csv;charset=utf-8,"
-          + headers.join(",") + "\n"
-          + exportData.data.map(p => {
-            const row = [
-              `"${p["Project Name"] || ''}"`,
-              `"${p.Website || ''}"`,
-              `"${p.Twitter || ''}"`,
-              `"${p.LinkedIn || ''}"`,
-              `"${p.Telegram || ''}"`
-            ];
-            return row.join(",");
-          }).join("\n");
-        
-        const filename = `web3-project-leads-with-socials-${date}&${timestamp}.csv`;
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-      } catch (error) {
-        console.error('Export error:', error);
-        alert('Failed to export data. Please try again.');
-      }
+      setIsExportModalOpen(true);
     } else {
       // Free users: Limited data (50 leads, project name and website only)
       if (projects.length === 0) {
         return;
       }
+      
+      const now = new Date();
+      const date = now.toISOString().split('T')[0];
+      const timestamp = now.toTimeString().split(' ')[0].replace(/:/g, '');
       
       const limitedProjects = projects.slice(0, 50);
       const headers = ["Project Name", "Website"];
@@ -746,6 +705,13 @@ const Dashboard = () => {
           )
         )}
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        userTier={user?.tier || 'free'}
+      />
     </div>
   );
 };

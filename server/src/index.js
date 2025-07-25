@@ -1854,16 +1854,43 @@ app.get('/projects', authenticateToken, (req, res) => {
   });
 });
 
-// Export endpoint for premium users
-app.get('/export-premium', authenticateToken, async (req, res) => {
+// Enhanced export endpoint with filters for premium users
+app.post('/export-premium', authenticateToken, async (req, res) => {
   try {
-    // Check if user is premium
+    // Check if user has premium access
     const userRecord = await userTable.find(req.user.id);
-    if (userRecord.fields.tier !== 'paid') {
-      return res.status(403).json({ error: 'Premium access required' });
+    const isPremium = userRecord.fields.tier === 'paid' || 
+                     userRecord.fields.subscriptionStatus === 'active' ||
+                     userRecord.fields.subscriptionStatus === 'trialing';
+    
+    if (!isPremium) {
+      return res.status(403).json({ 
+        error: 'Premium access required',
+        details: 'Upgrade to Pro to download lead data'
+      });
     }
 
-    console.log('Fetching ALL projects for premium export...');
+    const {
+      timeFilter = 'all', // 'all', 'week', '2weeks', 'month', 'quarter', 'custom'
+      includeFields = ['projectName', 'website', 'email', 'twitter', 'linkedin', 'telegram'],
+      requireSocials = false,
+      requireEmail = false,
+      requireFunding = false,
+      status = 'all',
+      customStartDate,
+      customEndDate,
+      format = 'csv' // 'csv', 'json'
+    } = req.body;
+
+    console.log(`🔍 Premium export request:`, {
+      user: req.user.email,
+      timeFilter,
+      includeFields,
+      requireSocials,
+      requireEmail,
+      format
+    });
+
     const projects = [];
     
     await new Promise((resolve, reject) => {
@@ -1871,7 +1898,10 @@ app.get('/export-premium', authenticateToken, async (req, res) => {
         view: "Grid view"
       }).eachPage(function page(records, fetchNextPage) {
         records.forEach(function(record) {
-          projects.push(record.fields);
+          projects.push({
+            ...record.fields,
+            recordId: record.id
+          });
         });
         fetchNextPage();
       }, function done(err) {
@@ -1884,35 +1914,128 @@ app.get('/export-premium', authenticateToken, async (req, res) => {
       });
     });
 
-    console.log(`Total projects fetched: ${projects.length}`);
+    console.log(`📊 Total projects fetched: ${projects.length}`);
     
-    // Filter projects that have at least one social media link
-    const projectsWithSocials = projects.filter(p => 
-      (p.Twitter && p.Twitter.trim() !== '') || 
-      (p.LinkedIn && p.LinkedIn.trim() !== '') || 
-      (p.Telegram && p.Telegram.trim() !== '')
-    );
+    // Apply time-based filtering
+    let filteredProjects = projects;
+    const now = new Date();
+    
+    if (timeFilter !== 'all') {
+      filteredProjects = projects.filter(p => {
+        if (!p['Date Added']) return false;
+        
+        const projectDate = new Date(p['Date Added']);
+        let cutoffDate;
+        
+        switch (timeFilter) {
+          case 'week':
+            cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '2weeks':
+            cutoffDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'quarter':
+            cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case 'custom':
+            if (customStartDate && customEndDate) {
+              return projectDate >= new Date(customStartDate) && projectDate <= new Date(customEndDate);
+            }
+            return true;
+          default:
+            return true;
+        }
+        
+        return projectDate >= cutoffDate;
+      });
+    }
 
-    console.log(`Projects with social media: ${projectsWithSocials.length}`);
+    // Apply content-based filtering
+    if (requireSocials) {
+      filteredProjects = filteredProjects.filter(p => 
+        (p.Twitter && p.Twitter.trim() !== '') || 
+        (p.LinkedIn && p.LinkedIn.trim() !== '') || 
+        (p.Telegram && p.Telegram.trim() !== '')
+      );
+    }
 
-    // Prepare CSV data
-    const csvData = projectsWithSocials.map(p => ({
-      "Project Name": p["Project Name"] || '',
-      "Website": p.Website || '',
-      "Twitter": p.Twitter || '',
-      "LinkedIn": p.LinkedIn || '',
-      "Telegram": p.Telegram || ''
-    }));
+    if (requireEmail) {
+      filteredProjects = filteredProjects.filter(p => 
+        p.Email && p.Email.trim() !== '' && p.Email.includes('@')
+      );
+    }
+
+    if (requireFunding) {
+      filteredProjects = filteredProjects.filter(p => 
+        p['Lead Summary'] && p['Lead Summary'].value && 
+        (p['Lead Summary'].value.toLowerCase().includes('funding') ||
+         p['Lead Summary'].value.toLowerCase().includes('raised') ||
+         p['Lead Summary'].value.toLowerCase().includes('investment'))
+      );
+    }
+
+    if (status !== 'all') {
+      filteredProjects = filteredProjects.filter(p => 
+        p.Status && p.Status.toLowerCase().includes(status.toLowerCase())
+      );
+    }
+
+    console.log(`✅ Filtered projects: ${filteredProjects.length} (${((filteredProjects.length / projects.length) * 100).toFixed(1)}% of total)`);
+
+    // Prepare export data based on selected fields
+    const exportData = filteredProjects.map(p => {
+      const row = {};
+      
+      if (includeFields.includes('projectName')) row['Project Name'] = p['Project Name'] || '';
+      if (includeFields.includes('website')) row['Website'] = p.Website || '';
+      if (includeFields.includes('email')) row['Email'] = p.Email || '';
+      if (includeFields.includes('twitter')) row['Twitter'] = p.Twitter || '';
+      if (includeFields.includes('linkedin')) row['LinkedIn'] = p.LinkedIn || '';
+      if (includeFields.includes('telegram')) row['Telegram'] = p.Telegram || '';
+      if (includeFields.includes('dateAdded')) row['Date Added'] = p['Date Added'] || '';
+      if (includeFields.includes('status')) row['Status'] = p.Status || '';
+      if (includeFields.includes('source')) row['Source'] = p.Source || '';
+      if (includeFields.includes('summary')) row['Lead Summary'] = p['Lead Summary']?.value || '';
+      
+      return row;
+    });
+
+    // Log export statistics
+    console.log(`📈 Export statistics:`, {
+      totalProjects: projects.length,
+      filteredProjects: filteredProjects.length,
+      filterCriteria: { timeFilter, requireSocials, requireEmail, requireFunding },
+      exportFields: includeFields.length,
+      format
+    });
 
     res.json({
+      success: true,
       total: projects.length,
-      withSocials: projectsWithSocials.length,
-      data: csvData
+      filtered: filteredProjects.length,
+      exported: exportData.length,
+      filters: {
+        timeFilter,
+        requireSocials,
+        requireEmail,
+        requireFunding,
+        status
+      },
+      data: exportData,
+      format,
+      generatedAt: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({ error: 'Failed to export data' });
+    console.error('❌ Export error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to export data',
+      details: error.message 
+    });
   }
 });
 
