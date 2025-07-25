@@ -120,13 +120,23 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
       const filterSuffix = timeFilter === 'all' ? 'all-data' : timeFilter;
       const filename = `web3-leads-${filterSuffix}-${date}&${timestamp}.csv`;
 
-      const encodedUri = encodeURI(csvContent);
+      // Use Blob instead of URI encoding to handle large files
+      const csvBlob = new Blob([csvContent.replace('data:text/csv;charset=utf-8,', '')], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const blobUrl = URL.createObjectURL(csvBlob);
+      
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.setAttribute("href", blobUrl);
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      URL.revokeObjectURL(blobUrl);
+      
+      console.log(`📋 Download initiated with Blob URL for ${filename}`);
 
       onClose();
     } catch (error) {
