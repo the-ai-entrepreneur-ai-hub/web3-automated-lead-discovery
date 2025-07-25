@@ -1,4 +1,3 @@
-```markdown
 # Web3Radar Product Improvement Plan (Based on User Feedback Analysis)
 
 ```mermaid
@@ -326,5 +325,4 @@ graph LR
     
     style A fill:#2196f3,color:#fff
     style H fill:#4caf50,color:#fff
-```
 ```
