@@ -89,22 +89,30 @@ const ExportModal = ({ isOpen, onClose, userTier }: ExportModalProps) => {
 
       console.log(`Exporting ${exportData.exported} projects out of ${exportData.total} total`);
       console.log(`📋 Client received ${exportData.data.length} records in exportData.data`);
-      console.log(`🔍 Export response:`, { 
-        total: exportData.total, 
-        filtered: exportData.filtered, 
-        exported: exportData.exported,
-        dataLength: exportData.data.length 
-      });
+      console.log(`🔍 Export response:`, exportData);
+      console.log(`📊 First few records:`, exportData.data.slice(0, 3));
+      console.log(`📊 Last few records:`, exportData.data.slice(-3));
 
       const headers = Object.keys(exportData.data[0] || {});
+      console.log(`📋 CSV Headers:`, headers);
+      
+      const csvRows = exportData.data.map(row => {
+        return headers.map(header => {
+          const value = row[header] || '';
+          return `"${value.toString().replace(/"/g, '""')}"`;
+        }).join(",");
+      });
+      
+      console.log(`📋 Generated ${csvRows.length} CSV rows`);
+      console.log(`📋 First CSV row:`, csvRows[0]);
+      console.log(`📋 Last CSV row:`, csvRows[csvRows.length - 1]);
+      
       const csvContent = "data:text/csv;charset=utf-8,"
         + headers.join(",") + "\n"
-        + exportData.data.map(row => {
-          return headers.map(header => {
-            const value = row[header] || '';
-            return `"${value.toString().replace(/"/g, '""')}"`;
-          }).join(",");
-        }).join("\n");
+        + csvRows.join("\n");
+
+      console.log(`📋 Final CSV content length: ${csvContent.length} characters`);
+      console.log(`📋 CSV line count: ${csvContent.split('\n').length - 1} lines (including header)`);
 
       const now = new Date();
       const date = now.toISOString().split('T')[0];
