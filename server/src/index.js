@@ -13,6 +13,7 @@ const { sendPasswordResetEmail, verifyEmailConfig } = require('./emailService');
 const { sendEmailVerification } = require('./emailVerificationService');
 const { sendPaymentReceipt, sendTestReceipt } = require('./emailServices/paymentReceiptService');
 const { stripe, STRIPE_CONFIG } = require('./stripe');
+const discountUtils = require('./discountUtils');
 require('dotenv').config();
 
 const app = express();
@@ -2130,49 +2131,57 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
     console.log(`📦 Request body:`, req.body);
     console.log(`🏷️ Discount code received:`, discountCode || 'NONE');
 
-    // Apply discount code if provided (case-insensitive)
+    // Apply discount code if provided with improved validation
     if (discountCode) {
       console.log(`🏷️ Discount code provided: ${discountCode}`);
-      console.log(`🏷️ Available codes:`, Object.keys(STRIPE_CONFIG.DISCOUNT_CODES));
       
-      const normalizedCode = discountCode.toUpperCase();
-      const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
-        code => code.toUpperCase() === normalizedCode
-      );
-      
-      console.log(`🏷️ Normalized code: ${normalizedCode}`);
-      console.log(`🏷️ Matched config code: ${configCode || 'NONE'}`);
-      
-      if (configCode) {
-        try {
-          // Create or retrieve discount coupon
-          let coupon;
-          try {
-            coupon = await stripe.coupons.retrieve(configCode);
-            console.log(`🏷️ Retrieved existing coupon: ${configCode}`);
-          } catch (couponError) {
-            // Create new coupon if it doesn't exist
-            const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[configCode];
-          coupon = await stripe.coupons.create({
-            id: configCode,
-            percent_off: discountInfo.percentage,
-            duration: discountInfo.duration,
-            name: discountInfo.description,
+      try {
+        const discountValidation = await discountUtils.canUseDiscountCode(discountCode, req.user.id);
+        
+        if (!discountValidation.valid) {
+          console.log(`❌ Invalid discount code: ${discountValidation.error}`);
+          return res.status(400).json({ 
+            error: discountValidation.error,
+            success: false 
           });
-          console.log(`✨ Created new coupon: ${configCode}`);
+        }
+
+        const couponId = discountUtils.generateCouponId(discountValidation.code);
+        console.log(`🏷️ Using coupon ID: ${couponId}`);
+        
+        // Create or retrieve discount coupon with consistent ID
+        let coupon;
+        try {
+          coupon = await stripe.coupons.retrieve(couponId);
+          console.log(`🏷️ Retrieved existing coupon: ${couponId}`);
+        } catch (couponError) {
+          if (couponError.code === 'resource_missing') {
+            // Create new coupon if it doesn't exist
+            const discountConfig = discountValidation.config;
+            coupon = await stripe.coupons.create({
+              id: couponId,
+              percent_off: discountConfig.percentage,
+              duration: discountConfig.duration,
+              name: discountConfig.description,
+              max_redemptions: discountConfig.maxUses || undefined,
+            });
+            console.log(`✨ Created new coupon: ${couponId}`);
+          } else {
+            throw couponError;
+          }
         }
 
         sessionConfig.discounts = [{
           coupon: coupon.id,
         }];
         
-        console.log(`🏷️ Applied discount code: ${configCode} (${coupon.percent_off}% off)`);
-        } catch (couponError) {
-          console.error('❌ Error applying discount code:', couponError);
-          return res.status(400).json({ error: 'Invalid discount code' });
-        }
-      } else {
-        console.log(`❌ Invalid discount code provided: ${discountCode}`);
+        console.log(`🏷️ Applied discount code: ${discountValidation.code} (${coupon.percent_off}% off)`);
+      } catch (discountError) {
+        console.error('❌ Error processing discount code:', discountError);
+        return res.status(400).json({ 
+          error: 'Failed to process discount code. Please try again.',
+          success: false 
+        });
       }
     }
 
@@ -2210,43 +2219,46 @@ app.post('/create-checkout-session', authenticateToken, async (req, res) => {
   }
 });
 
-// Validate discount code endpoint
+// Validate discount code endpoint with improved error handling
 app.post('/validate-discount-code', authenticateToken, async (req, res) => {
   try {
     const { discountCode } = req.body;
     
     if (!discountCode) {
-      return res.status(400).json({ error: 'Discount code is required' });
+      return res.status(400).json({ 
+        valid: false, 
+        error: 'Discount code is required' 
+      });
     }
 
     console.log(`🏷️ Validating discount code: ${discountCode}`);
-    console.log(`🏷️ Available codes:`, Object.keys(STRIPE_CONFIG.DISCOUNT_CODES));
     
-    // Check if discount code exists in our configuration (case-insensitive)
-    const normalizedCode = discountCode.toUpperCase();
-    const configCode = Object.keys(STRIPE_CONFIG.DISCOUNT_CODES).find(
-      code => code.toUpperCase() === normalizedCode
-    );
+    const validation = await discountUtils.canUseDiscountCode(discountCode, req.user.id);
     
-    console.log(`🏷️ Normalized: ${normalizedCode}, Found: ${configCode || 'NONE'}`);
-    
-    if (configCode) {
-      const discountInfo = STRIPE_CONFIG.DISCOUNT_CODES[configCode];
+    if (validation.valid) {
+      console.log(`✅ Valid discount code: ${validation.code}`);
+      const details = discountUtils.getDiscountDetails(validation.code);
       return res.json({
         valid: true,
-        percentage: discountInfo.percentage,
-        description: discountInfo.description,
-        duration: discountInfo.duration
+        percentage: details.percentage,
+        description: details.description,
+        duration: details.duration,
+        maxUses: details.maxUses,
+        expiresAt: details.expiresAt
       });
     } else {
+      console.log(`❌ Invalid discount code: ${validation.error}`);
       return res.json({
         valid: false,
-        message: 'Invalid discount code'
+        message: validation.error
       });
     }
   } catch (error) {
     console.error('Error validating discount code:', error);
-    res.status(500).json({ error: 'Failed to validate discount code' });
+    res.status(500).json({ 
+      valid: false, 
+      error: 'Internal server error while validating discount code' 
+    });
   }
 });
 
