@@ -305,7 +305,7 @@ const Dashboard = () => {
     }
   };
 
-  const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
+  const categories = ["All", "Recently Added", "Has Contact Info", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
   // Calculate dynamic stats from actual project data
   const stats = useMemo(() => {
@@ -323,31 +323,26 @@ const Dashboard = () => {
       return dateAdded >= twoWeeksAgo && dateAdded < oneWeekAgo;
     }).length;
     
-    const withFunding = projects.filter(project => {
-      const summary = project["Lead Summary"]?.value?.toLowerCase() || '';
-      return summary.includes('funding') || 
-             summary.includes('raised') || 
-             summary.includes('investment') ||
-             summary.includes('series') ||
-             summary.includes('seed') ||
-             summary.includes('million') ||
-             summary.includes('$');
+    const withContactInfo = projects.filter(project => {
+      return !!(project.Email && project.Email.trim() && 
+               project.Email !== 'N/A' && 
+               project.Email.includes('@'));
     }).length;
     
     const weekOverWeekChange = newLastWeek > 0 
       ? Math.round(((newThisWeek - newLastWeek) / newLastWeek) * 100)
       : newThisWeek > 0 ? 100 : 0;
     
-    const fundingPercentage = projects.length > 0 
-      ? Math.round((withFunding / projects.length) * 100)
+    const contactInfoPercentage = projects.length > 0 
+      ? Math.round((withContactInfo / projects.length) * 100)
       : 0;
     
     return {
       total: projects.length,
       newThisWeek,
       weekOverWeekChange,
-      withFunding,
-      fundingPercentage
+      withContactInfo,
+      contactInfoPercentage
     };
   }, [projects]);
   
@@ -366,11 +361,10 @@ const Dashboard = () => {
           case "Recently Added":
             matchesCategory = daysSinceAdded <= 7;
             break;
-          case "High Funding":
-            matchesCategory = project["Lead Summary"] && project["Lead Summary"].value && 
-                            (project["Lead Summary"].value.toLowerCase().includes("funding") || 
-                             project["Lead Summary"].value.toLowerCase().includes("raised") ||
-                             project["Lead Summary"].value.toLowerCase().includes("investment"));
+          case "Has Contact Info":
+            matchesCategory = !!(project.Email && project.Email.trim() && 
+                              project.Email !== 'N/A' && 
+                              project.Email.includes('@'));
             break;
           case "Early Stage":
             matchesCategory = daysSinceAdded <= 30 || 
@@ -522,11 +516,11 @@ const Dashboard = () => {
           </Card>
           <Card className="card-web3">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">With Funding</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Has Contact Info</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{stats.withFunding.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">{stats.fundingPercentage}% of total</div>
+              <div className="text-2xl font-bold text-primary">{stats.withContactInfo.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">{stats.contactInfoPercentage}% of total</div>
             </CardContent>
           </Card>
         </div>
