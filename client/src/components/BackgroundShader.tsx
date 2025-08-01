@@ -19,20 +19,27 @@ export default function BackgroundShader() {
     let disposed = false;
 
     const init = async () => {
-      // Dynamic import so SSR and fast cold-starts work better
-      const THREE = await import("three");
-      three = THREE;
+      try {
+        console.log('🚀 BackgroundShader: Starting initialization...');
+        
+        // Dynamic import so SSR and fast cold-starts work better
+        const THREE = await import("three");
+        three = THREE;
+        console.log('✅ Three.js loaded successfully');
 
-      if (disposed) return;
+        if (disposed) return;
 
-      const canvas = canvasRef.current!;
-      console.log('Initializing shader canvas:', canvas);
-      renderer = new THREE.WebGLRenderer({ canvas });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      console.log('Canvas size:', window.innerWidth, window.innerHeight);
+        const canvas = canvasRef.current!;
+        console.log('🎨 Canvas element:', canvas);
+        console.log('📐 Window dimensions:', window.innerWidth, 'x', window.innerHeight);
+        
+        renderer = new THREE.WebGLRenderer({ canvas });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        console.log('🖥️ WebGL renderer created and sized');
 
-      scene = new THREE.Scene();
-      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        scene = new THREE.Scene();
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        console.log('🎬 Scene and camera created');
 
       // Match site palette: cyan/teal colors from site theme
       const fragmentShader = `
@@ -139,18 +146,20 @@ export default function BackgroundShader() {
         }
       `;
 
-      material = new THREE.ShaderMaterial({
-        uniforms: {
-          iTime: { value: 0 },
-          iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
-        },
-        vertexShader,
-        fragmentShader,
-      });
+        material = new THREE.ShaderMaterial({
+          uniforms: {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
+          },
+          vertexShader,
+          fragmentShader,
+        });
+        console.log('🎨 Shader material created');
 
-      const geometry = new THREE.PlaneGeometry(2, 2);
-      mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        console.log('🔺 Geometry and mesh created and added to scene');
 
       const onResize = () => {
         if (!three) return;
@@ -178,23 +187,28 @@ export default function BackgroundShader() {
         renderer.render(scene, camera);
       };
 
-      animate(0);
+        animate(0);
+        console.log('🎬 Animation started successfully!');
 
-      cleanupRef.current = () => {
-        if (animationId) cancelAnimationFrame(animationId);
-        window.removeEventListener("resize", onResize);
-        if (scene && mesh) {
-          scene.remove(mesh);
-          mesh.geometry.dispose();
-          mesh = null;
-        }
-        if (material) {
-          material.dispose();
-        }
-        if (renderer) {
-          renderer.dispose();
-        }
-      };
+        cleanupRef.current = () => {
+          if (animationId) cancelAnimationFrame(animationId);
+          window.removeEventListener("resize", onResize);
+          if (scene && mesh) {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh = null;
+          }
+          if (material) {
+            material.dispose();
+          }
+          if (renderer) {
+            renderer.dispose();
+          }
+        };
+        
+      } catch (error) {
+        console.error('❌ BackgroundShader initialization failed:', error);
+      }
     };
 
     init();
@@ -206,17 +220,37 @@ export default function BackgroundShader() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: -1,
-      }}
-    />
+    <>
+      {/* Temporary visible test element to verify deployment */}
+      <div
+        style={{
+          position: "fixed",
+          top: "10px",
+          right: "10px",
+          background: "red",
+          color: "white",
+          padding: "5px 10px",
+          borderRadius: "5px",
+          fontSize: "12px",
+          zIndex: 9999,
+        }}
+      >
+        Shader Component Loaded: {Date.now()}
+      </div>
+      
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: -1,
+          backgroundColor: "rgba(255, 0, 0, 0.1)", // Temporary red tint to see canvas area
+        }}
+      />
+    </>
   );
 }
