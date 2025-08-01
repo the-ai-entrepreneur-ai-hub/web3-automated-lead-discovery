@@ -28,6 +28,10 @@ const CompetitorAnalysis = lazy(() => import("./pages/services/CompetitorAnalysi
 const ContactEnrichment = lazy(() => import("./pages/services/ContactEnrichment"));
 const About = lazy(() => import("./pages/About"));
 const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
+const Contact = lazy(() => import("./pages/Contact"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Documentation = lazy(() => import("./pages/Documentation"));
+const Api = lazy(() => import("./pages/Api"));
 
 // Loading component
 const PageLoader = () => (
@@ -84,6 +88,12 @@ function App() {
             <Route path="/articles/community-building" element={<CommunityBuilding />} />
             <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/documentation" element={<Documentation />} />
+            <Route path="/docs" element={<Documentation />} />
+            <Route path="/api" element={<Api />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
