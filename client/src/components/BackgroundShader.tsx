@@ -45,9 +45,9 @@ export default function BackgroundShader() {
         #define RING_POINTS 128
         #define POINT_SIZE 1.8
 
-        // Colors matched to site theme - using HSL(180 100% 50%) primary cyan
-        #define POINT_COLOR_A vec3(0.0, 1.0, 1.0)  // bright cyan - matches --primary: 180 100% 50%
-        #define POINT_COLOR_B vec3(0.7, 0.9, 1.0)  // lighter cyan variant
+        // Colors exactly matching the HTML example
+        #define POINT_COLOR_A vec3(1.0)
+        #define POINT_COLOR_B vec3(0.7)
 
         // Slower base speed
         #define SPEED 0.7
@@ -155,7 +155,7 @@ export default function BackgroundShader() {
 
       window.addEventListener("resize", onResize);
 
-      const speedMultiplier = 0.3; // Slower animation as requested
+      const speedMultiplier = 0.5; // Set speed to 0.5x to match HTML example
 
       const animate = (t: number) => {
         animationId = requestAnimationFrame(animate);
