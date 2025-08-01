@@ -43,14 +43,14 @@ export default function BackgroundShader() {
 
         #define TAU 6.2831853071795865
 
-        // Parameters matching the provided HTML animation
-        #define TUNNEL_LAYERS 96
-        #define RING_POINTS 128
-        #define POINT_SIZE 1.8
+        // Parameters - fewer layers and points for better performance and visibility
+        #define TUNNEL_LAYERS 48
+        #define RING_POINTS 64
+        #define POINT_SIZE 3.0
 
-        // Brighter colors for better visibility
-        #define POINT_COLOR_A vec3(1.5)
-        #define POINT_COLOR_B vec3(1.0)
+        // Very bright cyan colors for maximum visibility
+        #define POINT_COLOR_A vec3(0.0, 2.0, 2.0)  // bright cyan
+        #define POINT_COLOR_B vec3(2.0, 2.0, 2.0)  // bright white
 
         // Slower base speed
         #define SPEED 0.7
