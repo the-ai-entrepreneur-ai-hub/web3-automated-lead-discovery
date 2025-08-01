@@ -33,30 +33,30 @@ export default function BackgroundShader() {
       scene = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-      // Match site palette: soft cyan/teal whites over dark bg
+      // Match site palette: cyan/teal colors from site theme
       const fragmentShader = `
         uniform float iTime;
         uniform vec3 iResolution;
 
         #define TAU 6.2831853071795865
 
-        // Tunables
+        // Parameters matching the provided HTML animation
         #define TUNNEL_LAYERS 96
         #define RING_POINTS 128
         #define POINT_SIZE 1.8
 
-        // Colors matched to site palette (hues of cyan/teal-ish whites)
-        const vec3 POINT_COLOR_A = vec3(0.86, 0.96, 1.0); // soft cool white
-        const vec3 POINT_COLOR_B = vec3(0.65, 0.90, 0.95); // subtle cyan tint
+        // Colors matched to site theme - using HSL(180 100% 50%) primary cyan
+        #define POINT_COLOR_A vec3(0.0, 1.0, 1.0)  // bright cyan - matches --primary: 180 100% 50%
+        #define POINT_COLOR_B vec3(0.7, 0.9, 1.0)  // lighter cyan variant
 
-        // Base speed (reduced), further scaled by JS multiplier for fine control
-        #define SPEED 0.45
+        // Slower base speed
+        #define SPEED 0.7
 
         float sq(float x) { return x*x; }
 
         vec2 AngRep(vec2 uv, float angle) {
           vec2 polar = vec2(atan(uv.y, uv.x), length(uv));
-          polar.x = mod(polar.x + angle * 0.5, angle) - angle * 0.5;
+          polar.x = mod(polar.x + angle / 2.0, angle) - angle / 2.0;
           return polar.y * vec2(cos(polar.x), sin(polar.x));
         }
 
@@ -64,8 +64,8 @@ export default function BackgroundShader() {
           return length(uv) - r;
         }
 
-        vec3 MixShape(float sd, vec3 fill, vec3 target, float px) {
-          float blend = smoothstep(0.0, px, sd);
+        vec3 MixShape(float sd, vec3 fill, vec3 target) {
+          float blend = smoothstep(0.0, 1.0/iResolution.y, sd);
           return mix(fill, target, blend);
         }
 
@@ -80,45 +80,47 @@ export default function BackgroundShader() {
         void main() {
           vec2 res = iResolution.xy / iResolution.y;
           vec2 uv = gl_FragCoord.xy / iResolution.y;
-          uv -= res * 0.5;
-
-          vec3 color = vec3(0.0);
-
+          
+          uv -= res/2.0;
+          
+          vec3 color = vec3(0);
+          
           float repAngle = TAU / float(RING_POINTS);
-          float pointSize = POINT_SIZE / 2.0 / iResolution.y;
-
+          float pointSize = POINT_SIZE/2.0/iResolution.y;
+          
           float camZ = iTime * SPEED;
           vec2 camOffs = TunnelPath(camZ);
-
-          // Pixel size in world for smoother AA
-          float px = 1.0 / iResolution.y;
-
-          for (int i = 1; i <= TUNNEL_LAYERS; i++) {
+          
+          for(int i = 1; i <= TUNNEL_LAYERS; i++) {
             float pz = 1.0 - (float(i) / float(TUNNEL_LAYERS));
+            
+            // Scroll the points towards the screen
             pz -= mod(camZ, 4.0 / float(TUNNEL_LAYERS));
-
+            
+            // Layer x/y offset
             vec2 offs = TunnelPath(camZ + pz) - camOffs;
-
+            
+            // Radius of the current ring
             float ringRad = 0.15 * (1.0 / sq(pz * 0.8 + 0.4));
-
-            if (abs(length(uv + offs) - ringRad) < pointSize * 1.6) {
+            
+            // Only draw points when uv is close to the ring.
+            if(abs(length(uv + offs) - ringRad) < pointSize * 1.5) {
+              // Angular repeated uv coords
               vec2 aruv = AngRep(uv + offs, repAngle);
-              float pdist = sdCircle(aruv - vec2(ringRad, 0.0), pointSize);
 
-              // Alternate stripes softly between two brand-consistent tints
+              // Distance to the nearest point
+              float pdist = sdCircle(aruv - vec2(ringRad, 0), pointSize);
+
+              // Stripes
               vec3 ptColor = (mod(float(i / 2), 2.0) == 0.0) ? POINT_COLOR_A : POINT_COLOR_B;
-
+              
               // Distance fade
-              float shade = (1.0 - pz);
+              float shade = (1.0-pz);
 
-              color = MixShape(pdist, ptColor * shade, color, px);
+              color = MixShape(pdist, ptColor * shade, color);
             }
           }
-
-          // Gentle vignette to blend with dark background
-          float vignette = smoothstep(0.9, 0.2, length(uv) * 0.9);
-          color *= vignette;
-
+          
           gl_FragColor = vec4(color, 1.0);
         }
       `;
@@ -153,7 +155,7 @@ export default function BackgroundShader() {
 
       window.addEventListener("resize", onResize);
 
-      const speedMultiplier = 0.4; // Slightly slower than provided snippet
+      const speedMultiplier = 0.3; // Slower animation as requested
 
       const animate = (t: number) => {
         animationId = requestAnimationFrame(animate);
