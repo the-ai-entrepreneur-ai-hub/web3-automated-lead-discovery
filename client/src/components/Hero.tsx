@@ -49,9 +49,9 @@ const Hero = () => {
             variant="outline" 
             size="lg" 
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg"
-            onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => window.open('https://calendly.com/filip-kollertfilip/30min?month=2025-08', '_blank')}
           >
-            See Demo
+            Book a Call
           </Button>
         </div>
 

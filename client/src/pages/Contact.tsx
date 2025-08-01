@@ -237,14 +237,7 @@ export default function Contact() {
                   <Button 
                     className="w-full btn-web3"
                     onClick={() => {
-                      // Pre-fill form for demo request
-                      setFormData(prev => ({
-                        ...prev,
-                        subject: "Schedule Demo Request",
-                        message: "I would like to schedule a 30-minute demo of Web3Radar to see how it can help with my Web3 lead generation needs. Please let me know your available times."
-                      }));
-                      // Scroll to form
-                      document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' });
+                      window.open('https://calendly.com/filip-kollertfilip/30min?month=2025-08', '_blank');
                     }}
                   >
                     Schedule Demo Call

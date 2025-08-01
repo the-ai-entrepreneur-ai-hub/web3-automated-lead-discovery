@@ -307,6 +307,50 @@ const Dashboard = () => {
 
   const categories = ["All", "Recently Added", "High Funding", "Early Stage", "Mainnet Live", "Token Launch", "Hiring"];
   
+  // Calculate dynamic stats from actual project data
+  const stats = useMemo(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    const newThisWeek = projects.filter(project => {
+      const dateAdded = new Date(project["Date Added"]);
+      return dateAdded >= oneWeekAgo;
+    }).length;
+    
+    const newLastWeek = projects.filter(project => {
+      const dateAdded = new Date(project["Date Added"]);
+      return dateAdded >= twoWeeksAgo && dateAdded < oneWeekAgo;
+    }).length;
+    
+    const withFunding = projects.filter(project => {
+      const summary = project["Lead Summary"]?.value?.toLowerCase() || '';
+      return summary.includes('funding') || 
+             summary.includes('raised') || 
+             summary.includes('investment') ||
+             summary.includes('series') ||
+             summary.includes('seed') ||
+             summary.includes('million') ||
+             summary.includes('$');
+    }).length;
+    
+    const weekOverWeekChange = newLastWeek > 0 
+      ? Math.round(((newThisWeek - newLastWeek) / newLastWeek) * 100)
+      : newThisWeek > 0 ? 100 : 0;
+    
+    const fundingPercentage = projects.length > 0 
+      ? Math.round((withFunding / projects.length) * 100)
+      : 0;
+    
+    return {
+      total: projects.length,
+      newThisWeek,
+      weekOverWeekChange,
+      withFunding,
+      fundingPercentage
+    };
+  }, [projects]);
+  
   // Memoize expensive filtering and sorting operations
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
@@ -459,8 +503,10 @@ const Dashboard = () => {
               <CardTitle className="text-sm text-muted-foreground">Total Projects</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{projects.length}</div>
-              <div className="text-xs text-muted-foreground">+127 this week</div>
+              <div className="text-2xl font-bold text-primary">{stats.total.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">
+                +{stats.newThisWeek} this week
+              </div>
             </CardContent>
           </Card>
           <Card className="card-web3">
@@ -468,8 +514,10 @@ const Dashboard = () => {
               <CardTitle className="text-sm text-muted-foreground">New This Week</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">127</div>
-              <div className="text-xs text-muted-foreground">+23% from last week</div>
+              <div className="text-2xl font-bold text-primary">{stats.newThisWeek}</div>
+              <div className="text-xs text-muted-foreground">
+                {stats.weekOverWeekChange >= 0 ? '+' : ''}{stats.weekOverWeekChange}% from last week
+              </div>
             </CardContent>
           </Card>
           <Card className="card-web3">
@@ -477,8 +525,8 @@ const Dashboard = () => {
               <CardTitle className="text-sm text-muted-foreground">With Funding</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">3,891</div>
-              <div className="text-xs text-muted-foreground">38% of total</div>
+              <div className="text-2xl font-bold text-primary">{stats.withFunding.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">{stats.fundingPercentage}% of total</div>
             </CardContent>
           </Card>
         </div>

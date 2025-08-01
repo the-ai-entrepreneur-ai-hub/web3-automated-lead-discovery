@@ -239,6 +239,9 @@ const CaseStudies = () => {
               size="lg" 
               variant="outline"
               className="border-primary/20 text-primary hover:bg-primary/10"
+              onClick={() => {
+                window.open('https://calendly.com/filip-kollertfilip/30min?month=2025-08', '_blank');
+              }}
             >
               Schedule a Demo
             </Button>

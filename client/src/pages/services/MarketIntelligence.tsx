@@ -83,7 +83,7 @@ const MarketIntelligence = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-6 py-16">
+      <main className="container mx-auto px-6 pt-24 pb-16">
         {/* Coming Soon Badge */}
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
