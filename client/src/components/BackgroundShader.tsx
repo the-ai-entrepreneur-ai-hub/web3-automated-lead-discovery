@@ -26,9 +26,12 @@ export default function BackgroundShader() {
       if (disposed) return;
 
       const canvas = canvasRef.current!;
+      console.log('Initializing shader canvas:', canvas);
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setClearColor(0x000000, 0); // Transparent background
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
+      console.log('Canvas size:', window.innerWidth, window.innerHeight);
 
       scene = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -45,9 +48,9 @@ export default function BackgroundShader() {
         #define RING_POINTS 128
         #define POINT_SIZE 1.8
 
-        // Colors exactly matching the HTML example
-        #define POINT_COLOR_A vec3(1.0)
-        #define POINT_COLOR_B vec3(0.7)
+        // Brighter colors for better visibility
+        #define POINT_COLOR_A vec3(1.5)
+        #define POINT_COLOR_B vec3(1.0)
 
         // Slower base speed
         #define SPEED 0.7
@@ -164,6 +167,12 @@ export default function BackgroundShader() {
         lastTime = time;
 
         material.uniforms.iTime.value += delta * speedMultiplier;
+        
+        // Debug log every few seconds
+        if (Math.floor(time) % 5 === 0 && Math.floor(time) !== Math.floor(time - delta)) {
+          console.log('Shader rendering - time:', material.uniforms.iTime.value);
+        }
+        
         renderer.render(scene, camera);
       };
 
@@ -198,11 +207,12 @@ export default function BackgroundShader() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="fixed inset-0 z-0 pointer-events-none block"
+      className="fixed inset-0 pointer-events-none block"
       style={{
         width: "100vw",
         height: "100vh",
         display: "block",
+        zIndex: -1,
       }}
     />
   );
