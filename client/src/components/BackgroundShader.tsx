@@ -195,38 +195,5 @@ export default function BackgroundShader() {
     };
   }, []);
 
-  return (
-    <>
-      {/* Temporary visible test element to verify deployment */}
-      <div
-        style={{
-          position: "fixed",
-          top: "10px",
-          right: "10px",
-          background: "red",
-          color: "white",
-          padding: "5px 10px",
-          borderRadius: "5px",
-          fontSize: "12px",
-          zIndex: 9999,
-        }}
-      >
-        Shader Component Loaded: {Date.now()}
-      </div>
-      
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: -1,
-          backgroundColor: "rgba(255, 0, 0, 0.1)", // Temporary red tint to see canvas area
-        }}
-      />
-    </>
-  );
+  return null;
 }
