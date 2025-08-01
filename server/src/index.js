@@ -1895,8 +1895,10 @@ app.post('/export-premium', authenticateToken, async (req, res) => {
     
     await new Promise((resolve, reject) => {
       base('Leads').select({
-        view: "Grid view"
+        view: "Grid view",
+        pageSize: 100
       }).eachPage(function page(records, fetchNextPage) {
+        console.log(`📄 Fetched page with ${records.length} records`);
         records.forEach(function(record) {
           projects.push({
             ...record.fields,
@@ -1909,6 +1911,7 @@ app.post('/export-premium', authenticateToken, async (req, res) => {
           console.error('Airtable error:', err);
           reject(err);
         } else {
+          console.log(`✅ Finished fetching all pages. Total: ${projects.length} records`);
           resolve();
         }
       });

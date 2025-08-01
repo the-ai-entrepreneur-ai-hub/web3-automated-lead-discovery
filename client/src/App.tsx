@@ -1,6 +1,7 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LogoutNotification from "./components/LogoutNotification";
+import BackgroundShader from "./components/BackgroundShader";
 
 // Lazy load components for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -53,6 +54,8 @@ function App() {
   return (
     <Router>
       <LogoutNotification />
+      {/* Global shader background behind all content */}
+      <BackgroundShader />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
