@@ -1,0 +1,131 @@
+2025-07-26 20:36:58,307 - INFO - --- Starting File Move Script ---
+2025-07-26 20:36:58,308 - INFO - Checking for project backups in: C:\Users
+2025-07-26 20:37:08,490 - ERROR - Failed to move C:\Users\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir\avenir-lt-pro-cufonfonts-webfont (1).zip: [WinError 3] The system cannot find the path specified: 'D:\\'
+2025-07-26 20:37:08,491 - ERROR - Failed to move C:\Users\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir\Inter.zip: [WinError 3] The system cannot find the path specified: 'D:\\'
+2025-07-26 20:37:19,652 - ERROR - Failed to move C:\Users\Administrator\AppData\Local\Microsoft\Internet Explorer\brndlog.bak: [WinError 3] The system cannot find the path specified: 'D:\\'
+2025-07-26 20:41:13,746 - INFO - --- Starting File Move Script ---
+2025-07-26 20:41:13,747 - INFO - Checking for project backups in: C:\Users
+2025-07-26 20:41:27,047 - INFO - Moved old backup: C:\Users\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir\avenir-lt-pro-cufonfonts-webfont (1).zip to E:\Backup\project_backups\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir
+2025-07-26 20:41:27,133 - INFO - Moved old backup: C:\Users\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir\Inter.zip to E:\Backup\project_backups\Administrator\AppData\Local\Google\Chrome\User Data\Default\Extensions\lblebdecfhdegbeoejplcpmhibbkbkin\2.8.0_0\assets\fonts\Avenir
+2025-07-26 20:41:39,156 - INFO - Moved old backup: C:\Users\Administrator\AppData\Local\Microsoft\Internet Explorer\brndlog.bak to E:\Backup\project_backups\Administrator\AppData\Local\Microsoft\Internet Explorer
+2025-07-26 20:45:56,226 - INFO - Checking for large image files in: C:\Users
+2025-07-26 20:46:22,920 - ERROR - Failed to move C:\Users\Administrator\AppData\Local\Microsoft\Office\SolutionPackages\60b022f145bdc4cd3c9f227b6b76a5e2\PackageResources\OfflineFiles\copilotnvcreate_b745bc787bd07e5fb192d4d77b621817.png: [WinError 3] The system cannot find the path specified: 'D:\\'
+2025-07-26 20:49:33,687 - INFO - Checking for large image files in: C:\Users
+2025-07-26 20:49:53,941 - INFO - Moved large image: C:\Users\Administrator\AppData\Local\Microsoft\Office\SolutionPackages\60b022f145bdc4cd3c9f227b6b76a5e2\PackageResources\OfflineFiles\copilotnvcreate_b745bc787bd07e5fb192d4d77b621817.png to E:\Backup\large_images\Administrator\AppData\Local\Microsoft\Office\SolutionPackages\60b022f145bdc4cd3c9f227b6b76a5e2\PackageResources\OfflineFiles
+2025-07-26 21:06:40,190 - ERROR - Failed to move C:\Users\Administrator\AppData\Local\uv\cache\git-v0\checkouts\47480ae9bb448101\19688a0\demo.gif: [WinError 3] The system cannot find the path specified: 'D:\\'
+2025-07-26 21:08:43,350 - INFO - --- Starting File Move Script ---
+2025-07-26 21:08:43,351 - INFO - Checking for project backups in: C:\Users
+2025-07-26 21:10:47,652 - WARNING - Directory not found, skipping: C:\Projects
+2025-07-26 21:10:47,652 - INFO - --- Script Finished ---
+2025-07-26 21:10:49,847 - INFO - --- Starting File Move Script ---
+2025-07-26 21:10:49,847 - INFO - Checking for project backups in: C:\Users\Administrator
+2025-07-26 21:15:36,960 - INFO - --- Starting File Move Script ---
+2025-07-26 21:15:36,960 - INFO - Checking for project backups in: C:\Users\Administrator
+2025-07-26 21:17:31,353 - INFO - Checking for large image files in: C:\Users\Administrator
+2025-07-26 21:20:29,163 - INFO - Checking for large image files in: C:\Users\Administrator
+2025-07-26 21:21:46,351 - INFO - Moved large image: C:\Users\Administrator\AppData\Local\uv\cache\git-v0\checkouts\47480ae9bb448101\19688a0\demo.gif to E:\Backup\large_images\AppData\Local\uv\cache\git-v0\checkouts\47480ae9bb448101\19688a0
+2025-07-26 21:22:27,397 - INFO - --- Script Finished ---
+2025-07-26 21:24:22,815 - INFO - --- Script Finished ---
+2025-07-26 21:34:11,508 - INFO - --- Starting File Move Script ---
+2025-07-26 21:34:11,510 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 21:34:50,470 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\affliate.mp4 to E:\Backup\videos\.
+2025-07-26 21:34:57,986 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\consistency.mp4 to E:\Backup\videos\.
+2025-07-26 21:35:39,413 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\data input health.mp4 to E:\Backup\videos\.
+2025-07-26 21:37:23,482 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Healthcare Clinic Assistant with whatsapp and telegram.mp4 to E:\Backup\videos\.
+2025-07-26 21:38:19,075 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\High sales peach landing page.mp4 to E:\Backup\videos\.
+2025-07-26 21:38:43,707 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\hIgh sales peach landing page2.mp4 to E:\Backup\videos\.
+2025-07-26 21:39:00,984 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Job collection form.mp4 to E:\Backup\videos\.
+2025-07-26 21:39:02,586 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\ken.mp4 to E:\Backup\videos\.
+2025-07-26 21:40:23,555 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\MVPairoom.mp4 to E:\Backup\videos\.
+2025-07-26 21:40:25,493 - INFO - --- Starting File Move Script ---
+2025-07-26 21:40:25,493 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 21:40:40,375 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\MVProomai.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:41:38,444 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\MVProomai.mp4 to E:\Backup\videos\.
+2025-07-26 21:41:43,622 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Prompt creating the designs.mp4 to E:\Backup\videos\.
+2025-07-26 21:42:54,152 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Property Due Diligence Automation demo.mp4 to E:\Backup\videos\.
+2025-07-26 21:42:56,642 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Prompt creating the designs.mp4: [WinError 2] The system cannot find the file specified: 'C:\\Users\\Administrator\\Searches\\Videos\\Prompt creating the designs.mp4'
+2025-07-26 21:42:56,643 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Property Due Diligence Automation demo.mp4: [WinError 2] The system cannot find the file specified
+2025-07-26 21:43:02,534 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Property Due Diligence Automation.mp4 to E:\Backup\videos\.
+2025-07-26 21:43:17,639 - INFO - --- Starting File Move Script ---
+2025-07-26 21:43:17,639 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 21:43:37,569 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Property Due Diligence Automation.mp4: [WinError 2] The system cannot find the file specified: 'C:\\Users\\Administrator\\Searches\\Videos\\Property Due Diligence Automation.mp4'
+2025-07-26 21:43:45,601 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Propety Due Deligence Automation.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:43:45,601 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Propety Due Deligence Automation.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:43:45,616 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\upwork proposal generator.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:43:45,623 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Propety Due Deligence Automation.mp4 to E:\Backup\videos\.
+2025-07-26 21:44:08,253 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\zapier-automation.mp4 to E:\Backup\videos\.
+2025-07-26 21:44:18,805 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\upwork proposal generator.mp4 to E:\Backup\videos\.
+2025-07-26 21:44:18,807 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\zapier-automation.mp4: [WinError 2] The system cannot find the file specified
+2025-07-26 21:44:39,854 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Automate Etsy Fees and Payouts to QuickBooks _ Zapier - Google Chrome 2025-05-06 06-12-04.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:45:04,010 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\upwork proposal generator.mp4: [WinError 2] The system cannot find the file specified: 'C:\\Users\\Administrator\\Searches\\Videos\\upwork proposal generator.mp4'
+2025-07-26 21:45:04,012 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\zapier-automation.mp4: [WinError 2] The system cannot find the file specified
+2025-07-26 21:45:21,838 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Captures\Automate Etsy Fees and Payouts to QuickBooks _ Zapier - Google Chrome 2025-05-06 06-12-04.mp4: [WinError 2] The system cannot find the file specified: 'C:\\Users\\Administrator\\Searches\\Videos\\Captures\\Automate Etsy Fees and Payouts to QuickBooks _ Zapier - Google Chrome 2025-05-06 06-12-04.mp4'
+2025-07-26 21:46:57,054 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Captures\Automated Financial Securities Price Tracker - Google Sheets - Google Chrome 2025-05-06 07-44-35.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:47:59,331 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-17-10.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:49:01,491 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Captures\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-17-10.mp4: [WinError 2] The system cannot find the file specified: 'C:\\Users\\Administrator\\Searches\\Videos\\Captures\\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-17-10.mp4'
+2025-07-26 21:49:26,528 - ERROR - Failed to move C:\Users\Administrator\Searches\Videos\Captures\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-17-42.mp4: [WinError 32] The process cannot access the file because it is being used by another process
+2025-07-26 21:50:23,342 - INFO - --- Starting File Move Script ---
+2025-07-26 21:50:23,342 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 21:50:42,448 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-24-06.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:52:18,066 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Click to change name - Underdog Fantasy_ Pick'em - Home 2025-05-15 11-46-10.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:55:58,524 - INFO - --- Starting File Move Script ---
+2025-07-26 21:55:58,525 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 21:56:15,508 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Automated Financial Securities Price Tracker - Google Sheets - Google Chrome 2025-05-06 07-44-35.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:57:16,888 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Book 44.xlsx - Microsoft Excel Online and 8 more pages - Personal - Microsoft\u200b Edge 2025-05-07 02-17-42.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:58:07,531 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Click to change name - Underdog Fantasy_ Pick'em - Home 2025-05-15 11-54-16.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:59:29,215 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Click to change name - Underdog Fantasy_ Pick'em - Home 2025-05-15 11-55-22.mp4 to E:\Backup\videos\Captures
+2025-07-26 21:59:29,715 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Click to change name - Underdog Fantasy_ Pick'em 2025-05-15 11-57-21.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:00:05,755 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Click to change name - Underdog Fantasy_ Pick'em and Season-long Fantasy for NFL, NBA & more 2025-05-15 11-56-54.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:00:24,834 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\CRO Revenue Recognition Tracker  [Protected View] [Repaired] - Excel 2025-05-11 08-30-29.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:01:21,447 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\CRO Revenue Recognition Tracker  [Protected View] [Repaired] - Excel 2025-05-11 08-30-48.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:01:45,876 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Etsy Automation Fees _ Make - Google Chrome 2025-05-06 06-12-27.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:02:08,045 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\how to record screen in windows 11 - Google Search - Google Chrome 2025-05-02 07-15-17.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:02:23,559 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\how to record screen in windows 11 - Google Search - Google Chrome 2025-05-02 07-20-59.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:02:27,042 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Innovate & Automate - From Concept to Optimized Reality — Mozilla Firefox 2025-05-13 07-48-21.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:02:33,474 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Innovate & Automate - From Concept to Optimized Reality — Mozilla Firefox 2025-05-13 07-48-34.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:02:56,785 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Innovate & Automate - From Concept to Optimized Reality — Mozilla Firefox 2025-05-13 07-48-45.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:04:31,378 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\n8n LEads Bot.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:05:17,333 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\OFER AUTOMATION SYSTEM _ Make - Google Chrome 2025-05-18 06-30-16.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:09:50,373 - INFO - --- Starting File Move Script ---
+2025-07-26 22:09:50,373 - INFO - Checking for video files in: C:\Users\Administrator\Searches\Videos
+2025-07-26 22:14:24,177 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\OFER AUTOMATION SYSTEM _ Make - Google Chrome 2025-05-18 06-54-12.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:41,806 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\PROJECT OVERVIEW(Core Process Flow) - Google Chrome 2025-06-02 22-14-09.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:43,285 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\PropInsight - Property Analysis Tool - Google Chrome 2025-05-13 00-49-42.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:48,873 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\README.md - Upwork UD - Visual Studio Code [Administrator] 2025-05-18 06-37-10.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:50,642 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Typeform - Create - Google Chrome 2025-06-02 02-30-31.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:52,301 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Vapi - Dashboard - Google Chrome 2025-05-07 09-58-00.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:56,223 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Welcome - Automation Projects - Visual Studio Code [Administrator] 2025-05-24 22-50-13.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:56,412 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Welcome - Automation Projects - Visual Studio Code [Administrator] 2025-05-24 22-50-47.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:56,464 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Welcome - Automation Projects - Visual Studio Code [Administrator] 2025-05-24 22-52-05.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:56,562 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Youtube and tiktokdata - Google Sheets - Google Chrome 2025-05-13 04-40-45.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:16:57,155 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Youtube and tiktokdata - Google Sheets - Google Chrome 2025-05-13 04-41-12.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:00,623 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Youtube and tiktokdata - Google Sheets - Google Chrome 2025-05-13 04-43-59 - today.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:07,018 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\Youtube SCRAPPER _ Make - Google Chrome 2025-05-13 04-39-45.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:16,256 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f AI-Powered Social Media Automation Tool - n8n - Google Chrome 2025-05-04 17-56-24.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:20,722 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f AI-Powered Social Media Automation Tool - n8n - Google Chrome 2025-05-04 17-57-31.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:23,721 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f Lead Incubation System Overview - n8n - Google Chrome 2025-05-07 20-26-03.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:29,108 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f Leads Bot - n8n - Google Chrome 2025-05-02 07-15-57.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:32,298 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f Leads Bot - n8n - Google Chrome 2025-05-02 07-18-55.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:37,105 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f Leads Bot - n8n - Google Chrome 2025-05-02 07-19-07.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:40,453 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Captures\\u25b6\ufe0f Leads Bot - n8n - Google Chrome 2025-05-02 07-26-53.mp4 to E:\Backup\videos\Captures
+2025-07-26 22:17:40,713 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-04-30 233015.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:41,818 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-01 035002.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:42,160 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-01 175122.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:42,999 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-01 181213.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:46,919 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-01 212152.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:47,190 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-01 213754.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:47,679 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-02 012235.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:47,875 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-02 012432.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:47,939 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-06 060405.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:50,682 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-06 223736.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:50,780 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-06 224714.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:51,008 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-06 225532.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:51,299 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-07 022308.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:59,965 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-13 075718.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:17:59,993 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-26 025610.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:18:05,068 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-05-27 022855.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:18:05,201 - INFO - Moved video: C:\Users\Administrator\Searches\Videos\Screen Recordings\Screen Recording 2025-06-02 023314.mp4 to E:\Backup\videos\Screen Recordings
+2025-07-26 22:18:05,202 - WARNING - Directory not found, skipping: C:\Users\Administrator\Videos
+2025-07-26 22:18:05,202 - INFO - Moving specific files.
+2025-07-26 22:18:18,044 - INFO - Moved specific file: C:\Users\Administrator\Downloads\OllamaSetup.exe to E:\Backup\specific_files
+2025-07-26 22:18:18,044 - INFO - --- Script Finished ---
