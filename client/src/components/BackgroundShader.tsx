@@ -196,7 +196,7 @@ export default function BackgroundShader() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="fixed inset-0 -z-10 pointer-events-none block"
+      className="fixed inset-0 z-0 pointer-events-none block"
       style={{
         width: "100vw",
         height: "100vh",

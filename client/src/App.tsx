@@ -56,36 +56,38 @@ function App() {
       <LogoutNotification />
       {/* Global shader background behind all content */}
       <BackgroundShader />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/auth-success" element={<AuthSuccess />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/case-studies" element={<CaseStudies />} />
-          <Route path="/best-practices" element={<BestPractices />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/services/lead-discovery" element={<LeadDiscovery />} />
-          <Route path="/services/market-intelligence" element={<MarketIntelligence />} />
-          <Route path="/services/competitor-analysis" element={<CompetitorAnalysis />} />
-          <Route path="/services/contact-enrichment" element={<ContactEnrichment />} />
-          <Route path="/articles/lead-generation-strategies" element={<LeadGenerationStrategies />} />
-          <Route path="/articles/community-building" element={<CommunityBuilding />} />
-          <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+      <div className="relative z-10">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth-success" element={<AuthSuccess />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/case-studies" element={<CaseStudies />} />
+            <Route path="/best-practices" element={<BestPractices />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/services/lead-discovery" element={<LeadDiscovery />} />
+            <Route path="/services/market-intelligence" element={<MarketIntelligence />} />
+            <Route path="/services/competitor-analysis" element={<CompetitorAnalysis />} />
+            <Route path="/services/contact-enrichment" element={<ContactEnrichment />} />
+            <Route path="/articles/lead-generation-strategies" element={<LeadGenerationStrategies />} />
+            <Route path="/articles/community-building" element={<CommunityBuilding />} />
+            <Route path="/articles/web3-analytics" element={<Web3Analytics />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </div>
     </Router>
   );
 }
