@@ -93,50 +93,26 @@ export default function BackgroundShader() {
         }
 
         void main() {
-            vec2 res = iResolution.xy / iResolution.y;
-            vec2 uv = gl_FragCoord.xy / iResolution.y;
+            vec2 uv = gl_FragCoord.xy / iResolution.xy;
             
-            uv -= res/2.0;
+            // Create a bright animated gradient that MUST be visible
+            float time = iTime * 0.5;
             
-            vec3 color = vec3(0);
+            // Animated colors - very bright
+            vec3 color1 = vec3(2.0, 0.0, 2.0); // Bright magenta
+            vec3 color2 = vec3(0.0, 2.0, 2.0); // Bright cyan
+            vec3 color3 = vec3(2.0, 2.0, 0.0); // Bright yellow
             
-            float repAngle = TAU / float(RING_POINTS);
-            float pointSize = POINT_SIZE/2.0/iResolution.y;
+            // Create animated waves
+            float wave1 = sin(uv.x * 10.0 + time * 2.0) * 0.5 + 0.5;
+            float wave2 = cos(uv.y * 8.0 + time * 1.5) * 0.5 + 0.5;
+            float wave3 = sin((uv.x + uv.y) * 6.0 + time) * 0.5 + 0.5;
             
-            float camZ = iTime * SPEED;
-            vec2 camOffs = TunnelPath(camZ);
+            // Mix colors based on waves
+            vec3 finalColor = mix(color1, color2, wave1);
+            finalColor = mix(finalColor, color3, wave2 * wave3);
             
-            for(int i = 1; i <= TUNNEL_LAYERS; i++) {
-                float pz = 1.0 - (float(i) / float(TUNNEL_LAYERS));
-                
-                //Scroll the points towards the screen
-                pz -= mod(camZ, 4.0 / float(TUNNEL_LAYERS));
-                
-                //Layer x/y offset
-                vec2 offs = TunnelPath(camZ + pz) - camOffs;
-                
-                //Radius of the current ring
-                float ringRad = 0.15 * (1.0 / sq(pz * 0.8 + 0.4));
-                
-                //Only draw points when uv is close to the ring.
-                if(abs(length(uv + offs) - ringRad) < pointSize * 1.5) {
-                    //Angular repeated uv coords
-                    vec2 aruv = AngRep(uv + offs, repAngle);
-
-                    //Distance to the nearest point
-                    float pdist = sdCircle(aruv - vec2(ringRad, 0), pointSize);
-
-                    //Stripes
-                    vec3 ptColor = (mod(float(i / 2), 2.0) == 0.0) ? POINT_COLOR_A : POINT_COLOR_B;
-                    
-                    //Distance fade
-                    float shade = (1.0-pz);
-
-                    color = MixShape(pdist, ptColor * shade, color);
-                }
-            }
-            
-            gl_FragColor = vec4(color, 1.0);
+            gl_FragColor = vec4(finalColor, 1.0);
         }
       `;
 
