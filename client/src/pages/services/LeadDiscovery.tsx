@@ -129,6 +129,16 @@ const LeadDiscovery = () => {
               variant="outline" 
               size="lg"
               className="border-blue-500/30 text-blue-600 hover:bg-blue-50"
+              onClick={() => {
+                // Scroll to demo section or open demo modal
+                const demoSection = document.getElementById('demo-section');
+                if (demoSection) {
+                  demoSection.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  // Navigate to home page demo section
+                  navigate('/#demo');
+                }
+              }}
             >
               Watch Demo
             </Button>
@@ -300,6 +310,10 @@ const LeadDiscovery = () => {
               variant="outline" 
               size="lg"
               className="border-blue-500/30 text-blue-600 hover:bg-blue-50"
+              onClick={() => {
+                // Navigate to contact page with demo request
+                navigate('/contact?request=demo');
+              }}
             >
               Schedule Demo
             </Button>

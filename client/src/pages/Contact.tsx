@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import Header from "@/components/Header";
+import { useLocation } from "react-router-dom";
 
 export default function Contact() {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,6 +19,18 @@ export default function Contact() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Check if this is a demo request
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('request') === 'demo') {
+      setFormData(prev => ({
+        ...prev,
+        subject: "Schedule Demo Request",
+        message: "I'm interested in scheduling a demo of Web3Radar to see how it can help with my Web3 lead generation needs."
+      }));
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +68,7 @@ export default function Contact() {
 
           <div className="grid md:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <Card className="card-web3">
+            <Card className="card-web3" id="contact-form">
               <CardHeader>
                 <CardTitle className="text-2xl">Send us a message</CardTitle>
                 <CardDescription>
@@ -220,7 +234,19 @@ export default function Contact() {
                   <p className="text-muted-foreground mb-4">
                     Book a 30-minute demo to see how Web3Radar can help you discover and convert high-quality Web3 leads.
                   </p>
-                  <Button className="w-full btn-web3">
+                  <Button 
+                    className="w-full btn-web3"
+                    onClick={() => {
+                      // Pre-fill form for demo request
+                      setFormData(prev => ({
+                        ...prev,
+                        subject: "Schedule Demo Request",
+                        message: "I would like to schedule a 30-minute demo of Web3Radar to see how it can help with my Web3 lead generation needs. Please let me know your available times."
+                      }));
+                      // Scroll to form
+                      document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
                     Schedule Demo Call
                   </Button>
                 </CardContent>

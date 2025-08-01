@@ -165,10 +165,27 @@ const DemoSection = () => {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      // Show project details in a modal or navigate to project page
+                      alert(`Viewing details for ${project.name}. This would open a detailed project view.`);
+                      // TODO: Implement proper project details modal or page
+                    }}
+                  >
                     View Details
                   </Button>
-                  <Button size="sm" className="flex-1 bg-gradient-to-r from-primary to-primary/80">
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/80"
+                    onClick={() => {
+                      // Add project to user's pipeline/CRM
+                      alert(`${project.name} added to your pipeline! This would integrate with your CRM.`);
+                      // TODO: Implement actual pipeline/CRM integration
+                    }}
+                  >
                     Add to Pipeline
                   </Button>
                 </div>
