@@ -82,7 +82,7 @@ const CompetitorAnalysis = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-6 py-16">
+      <main className="container mx-auto px-6 pt-24 pb-16">
         {/* Coming Soon Badge */}
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-purple-500/10 text-purple-600 border-purple-500/20">

@@ -102,7 +102,7 @@ const LeadDiscovery = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-6 py-16">
+      <main className="container mx-auto px-6 pt-24 pb-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-blue-500/10 text-blue-600 border-blue-500/20">
@@ -130,17 +130,10 @@ const LeadDiscovery = () => {
               size="lg"
               className="border-blue-500/30 text-blue-600 hover:bg-blue-50"
               onClick={() => {
-                // Scroll to demo section or open demo modal
-                const demoSection = document.getElementById('demo-section');
-                if (demoSection) {
-                  demoSection.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                  // Navigate to home page demo section
-                  navigate('/#demo');
-                }
+                window.open('https://calendly.com/filip-kollertfilip/30min?month=2025-08', '_blank');
               }}
             >
-              Watch Demo
+              Book a Call
             </Button>
           </div>
         </div>
@@ -311,8 +304,7 @@ const LeadDiscovery = () => {
               size="lg"
               className="border-blue-500/30 text-blue-600 hover:bg-blue-50"
               onClick={() => {
-                // Navigate to contact page with demo request
-                navigate('/contact?request=demo');
+                window.open('https://calendly.com/filip-kollertfilip/30min?month=2025-08', '_blank');
               }}
             >
               Schedule Demo
