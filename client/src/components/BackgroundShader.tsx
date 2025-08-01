@@ -51,9 +51,9 @@ export default function BackgroundShader() {
         //Parameters
         #define TUNNEL_LAYERS 96
         #define RING_POINTS 128
-        #define POINT_SIZE 1.8
-        #define POINT_COLOR_A vec3(1.0)
-        #define POINT_COLOR_B vec3(0.7)
+        #define POINT_SIZE 2.5
+        #define POINT_COLOR_A vec3(3.0, 3.0, 3.0)  // Very bright white
+        #define POINT_COLOR_B vec3(0.0, 2.0, 2.0)  // Bright cyan
 
         #define SPEED 0.7
 
