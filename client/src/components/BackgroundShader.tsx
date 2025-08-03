@@ -22,6 +22,20 @@ export default function BackgroundShader() {
       try {
         console.log('🚀 BackgroundShader: Starting initialization...');
         
+        // Check for canvas element first
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          console.warn('⚠️ BackgroundShader: Canvas element not found');
+          return;
+        }
+
+        // Check for WebGL capability
+        const webglContext = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!webglContext) {
+          console.warn('⚠️ BackgroundShader: WebGL not supported, falling back to static background');
+          return;
+        }
+        
         // Dynamic import so SSR and fast cold-starts work better
         const THREE = await import("three");
         three = THREE;
@@ -29,11 +43,14 @@ export default function BackgroundShader() {
 
         if (disposed) return;
 
-        const canvas = canvasRef.current!;
         console.log('🎨 Canvas element:', canvas);
         console.log('📐 Window dimensions:', window.innerWidth, 'x', window.innerHeight);
         
-        renderer = new THREE.WebGLRenderer({ canvas });
+        renderer = new THREE.WebGLRenderer({ 
+          canvas,
+          antialias: false, // Disable antialiasing for better performance
+          powerPreference: "low-power" // Prefer low-power GPU
+        });
         renderer.setSize(window.innerWidth, window.innerHeight);
         console.log('🖥️ WebGL renderer created and sized');
 
@@ -184,6 +201,8 @@ export default function BackgroundShader() {
         
       } catch (error) {
         console.error('❌ BackgroundShader initialization failed:', error);
+        // Don't throw the error, just log it and continue
+        // The component will return a canvas element with static fallback
       }
     };
 
@@ -195,5 +214,14 @@ export default function BackgroundShader() {
     };
   }, []);
 
-  return null;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 w-full h-full -z-10"
+      style={{
+        background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)',
+        pointerEvents: 'none'
+      }}
+    />
+  );
 }

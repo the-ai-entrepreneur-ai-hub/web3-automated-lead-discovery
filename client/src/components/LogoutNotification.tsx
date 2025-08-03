@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, X } from 'lucide-react';
 
 const LogoutNotification = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [logoutMessage, setLogoutMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -12,12 +13,18 @@ const LogoutNotification = () => {
     if (logoutParam) {
       setLogoutMessage(decodeURIComponent(logoutParam));
       
-      // Remove the logout parameter from URL after showing
+      // Remove the logout parameter from URL after showing, preserving hash
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete('logout');
+      
+      // Preserve the hash when updating search params
+      const newUrl = newSearchParams.toString() 
+        ? `${location.pathname}?${newSearchParams}${location.hash}`
+        : `${location.pathname}${location.hash}`;
+      
       setSearchParams(newSearchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, location.pathname, location.hash]);
 
   const handleDismiss = () => {
     setLogoutMessage(null);

@@ -22,18 +22,18 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-muted-foreground hover:text-primary transition-colors">
+            <a href="/#features" className="text-muted-foreground hover:text-primary transition-colors">
               Features
             </a>
-            <a href="#pricing" className="text-muted-foreground hover:text-primary transition-colors">
+            <a href="/#pricing" className="text-muted-foreground hover:text-primary transition-colors">
               Pricing
             </a>
-            <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">
+            <a href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
             </a>
-            <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* Desktop CTA */}
@@ -71,18 +71,18 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-border">
             <div className="px-2 pt-4 pb-6 space-y-4">
-              <a href="#features" className="block text-muted-foreground hover:text-primary transition-colors py-2">
+              <a href="/#features" className="block text-muted-foreground hover:text-primary transition-colors py-2">
                 Features
               </a>
-              <a href="#pricing" className="block text-muted-foreground hover:text-primary transition-colors py-2">
+              <a href="/#pricing" className="block text-muted-foreground hover:text-primary transition-colors py-2">
                 Pricing
               </a>
-              <a href="#about" className="block text-muted-foreground hover:text-primary transition-colors py-2">
+              <a href="/#about" className="block text-muted-foreground hover:text-primary transition-colors py-2">
                 About
               </a>
-              <a href="#contact" className="block text-muted-foreground hover:text-primary transition-colors py-2">
+              <Link to="/contact" className="block text-muted-foreground hover:text-primary transition-colors py-2">
                 Contact
-              </a>
+              </Link>
               <div className="pt-4 space-y-2">
                 <Button 
                   variant="ghost" 
