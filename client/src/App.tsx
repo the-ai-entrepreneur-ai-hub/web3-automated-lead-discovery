@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LogoutNotification from "./components/LogoutNotification";
 import BackgroundShader from "./components/BackgroundShader";
@@ -94,6 +94,13 @@ function App() {
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/docs" element={<Documentation />} />
             <Route path="/api" element={<Api />} />
+            
+            {/* Defensive redirects for hash-anchor paths */}
+            <Route path="/features" element={<Navigate to="/#features" replace />} />
+            <Route path="/careers" element={<Navigate to="/#careers" replace />} />
+            <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+            <Route path="/about-section" element={<Navigate to="/#about" replace />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
