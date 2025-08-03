@@ -186,8 +186,9 @@ export default function Contact() {
                     <Mail className="w-6 h-6 text-primary mt-1" />
                     <div>
                       <h4 className="font-semibold">Email</h4>
-                      <p className="text-muted-foreground">hello@web3radar.com</p>
-                      <p className="text-muted-foreground">support@web3radar.com</p>
+                      <a href="mailto:support@rawfreedomai.com" className="text-muted-foreground hover:text-primary transition-colors">
+                        support@rawfreedomai.com
+                      </a>
                     </div>
                   </div>
 
@@ -195,8 +196,10 @@ export default function Contact() {
                     <Phone className="w-6 h-6 text-primary mt-1" />
                     <div>
                       <h4 className="font-semibold">Phone</h4>
-                      <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                      <p className="text-sm text-muted-foreground">Mon-Fri 9AM-6PM PST</p>
+                      <a href="tel:+420603365013" className="text-muted-foreground hover:text-primary transition-colors">
+                        +420603365013
+                      </a>
+                      <p className="text-sm text-muted-foreground">Mon-Fri 9AM-6PM CET</p>
                     </div>
                   </div>
 
@@ -205,9 +208,8 @@ export default function Contact() {
                     <div>
                       <h4 className="font-semibold">Office</h4>
                       <p className="text-muted-foreground">
-                        123 Web3 Street<br />
-                        San Francisco, CA 94107<br />
-                        United States
+                        Prague, Czech Republic<br />
+                        <span className="text-sm">Detailed address available upon request</span>
                       </p>
                     </div>
                   </div>
